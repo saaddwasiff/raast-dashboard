@@ -1,0 +1,9 @@
+{
+  "name": "raast-dashboard-build",
+  "private": true,
+  "description": "Rebuilds index.html from SBP files placed in data/inbox",
+  "dependencies": {
+    "pdfjs-dist": "3.11.174",
+    "xlsx": "0.18.5"
+  }
+}

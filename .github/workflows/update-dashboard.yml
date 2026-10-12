@@ -1,0 +1,76 @@
+name: Update dashboard
+
+# Runs when files are uploaded to data/inbox (and on any other change to main),
+# rebuilds index.html from them, then publishes the site.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: dashboard
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new files
+        id: inbox
+        run: |
+          if ls data/inbox/*.xlsx data/inbox/*.xls data/inbox/*.pdf data/inbox/*.XLSX data/inbox/*.PDF >/dev/null 2>&1; then
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.inbox.outputs.new == 'true'
+        with:
+          node-version: 20
+
+      - name: Read files and rebuild index.html
+        if: steps.inbox.outputs.new == 'true'
+        run: |
+          cd build && npm install --no-audit --no-fund --silent && cd ..
+          node build/update.js
+          cat data/last-update.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save the updated dashboard
+        if: steps.inbox.outputs.new == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A index.html data
+          git commit -m "Dashboard data updated from uploaded files" || echo "No changes"
+          git push
+
+      - name: Report a failed read
+        if: failure()
+        run: cat data/last-update.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp index.html robots.txt _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

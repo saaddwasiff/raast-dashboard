@@ -328,7 +328,7 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
       <ol class="steps">
         <li>Load SBP's monthly Raast workbook as received.</li>
         <li>When SBP publishes a new Payment Systems Review, load the PDF as it is. The dashboard reads its annexure tables (Raast, retail payments by channel, ATM cash withdrawals, infrastructure and users) and adds the new quarter, applying SBP's revisions to earlier quarters.</li>
-        <li>Load one or both files below, check the summary, then publish (or download the updated page for the website).</li>
+        <li>Upload both files to the <b>data/inbox</b> folder of the GitHub repository. The website reads them and updates itself within a few minutes. To check files first without changing anything, load them below and click Check files.</li>
       </ol>
       <div class="upl">
         <label class="file" for="upMonthly"><span class="file-t">SBP monthly Raast workbook</span><span class="file-n" id="upMonthlyN">No file chosen</span><input type="file" id="upMonthly" accept=".xlsx,.xls"></label>
@@ -521,7 +521,11 @@ function qIndexP(q){var m=q.match(/Q(\d) FY(\d+)/);return +m[2]*4+(+m[1]);}
 /* Merge PDF results into the dashboard data. A quarter is only replaced by an issue at least as recent
    as the issue its current figures came from, so loading an old PSR never undoes later revisions. */
 var PSR_NAMES={atm:'ATM/CDM',atm_cw:'ATM cash withdrawals',pos:'POS',ib:'Internet Banking',mb:'Mobile Banking Apps',call:'Call Center/IVR',ecom:'E-Commerce',ewallet:'E-Money Wallets',bbwallet:'BB/Digital Banking Apps',dd:'Direct Debit',bbagent:'BB Agents',branch:'Bank Branches'};
-function srcIdx(s){ var m=String(s||'').match(/Q\s*([1-4])\s*-?\s*FY\s*-?\s*(\d{2})/i); return m?(+m[2]*4+(+m[1])):0; }
+function srcIdx(s){ s=String(s||''); var best=0, m, re=/Q\s*([1-4])\s*-?\s*FY\s*-?\s*(\d{2})/gi;
+  while((m=re.exec(s))) best=Math.max(best,+m[2]*4+(+m[1]));
+  /* an SBP Annual Review for FYxx is published after that year's Q4 issue */
+  var a=s.match(/annual review\s*FY\s*(\d{2})/i); if(a) best=Math.max(best,+a[1]*4+4.5);
+  return best; }
 function mergePSR(D, P, srcLabel){
   var END={1:'Sep-',2:'Dec-',3:'Mar-',4:'Jun-'}, changed=[], skipped=[], issue=qIndexP(P.latest);
   function endOf(q){var m=q.match(/Q(\d) FY(\d+)/);var y=+m[2];return END[m[1]]+String(+m[1]<=2?y-1:y).padStart(2,'0');}

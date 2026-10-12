@@ -2,16 +2,23 @@
 
 Internal dashboard tracking Raast (Pakistan's instant payment system) from SBP monthly Raast reporting and the SBP Payment Systems Review. Built and maintained by the Raast Ecosystem Development team, Karandaaz Pakistan.
 
-The whole dashboard is one self-contained file, `index.html`. The data is embedded in the file; the charting libraries load from cdnjs.
+Live site: https://saaddwasiff.github.io/raast-dashboard/
 
-## Monthly update
+## Updating the data
 
-1. Open the live site and go to **Data & update**.
-2. Load the new SBP monthly Raast workbook and, when SBP publishes a new Payment Systems Review, the PSR PDF itself. The dashboard reads the PDF's annexure tables directly.
-3. Click **Check files** and review the summary and data checks.
-4. Click **Download updated index.html**.
-5. In this repository, click **Add file → Upload files**, drop in the new `index.html`, and commit. The site refreshes within a minute or two.
+1. Open the `data/inbox` folder in this repository and click **Add file → Upload files**.
+2. Drop in the new SBP monthly Raast workbook (.xlsx) and/or the new Payment Systems Review PDF, then click **Commit changes**.
+3. Within a few minutes the site updates by itself. The files move to `data/processed/<date>/`.
+4. Open `data/last-update.md` to see what was read, what changed, and any figures to confirm with SBP.
 
-## Hosting
+If a file can't be read (for example SBP changes a table layout), nothing on the site changes, the run shows as failed in the **Actions** tab, and `data/last-update.md` explains why.
 
-Served with GitHub Pages from the `main` branch, root folder. `robots.txt` and a `noindex` tag ask search engines not to list the site, but anyone with the link can open it.
+Older PSR issues never overwrite figures that came from a newer issue or from an SBP Annual Review.
+
+## How it works
+
+- `index.html` is the whole dashboard, with the data embedded in it.
+- `.github/workflows/update-dashboard.yml` runs on every change to `main`: it reads anything in `data/inbox` with `build/update.js` (the same parsing code the dashboard uses), saves the updated `index.html`, and publishes the site.
+- `build/lib/` holds the parsing and calculation code shared with the page.
+
+The repository is public: anyone can view the site and the files in it.
