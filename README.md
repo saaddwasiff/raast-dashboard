@@ -7,7 +7,7 @@ The whole dashboard is one self-contained file, `index.html`. The data is embedd
 ## Monthly update
 
 1. Open the live site and go to **Data & update**.
-2. Load the new SBP monthly Raast workbook and, when a new PSR is out, `Raast_PSR_Data.xlsx`.
+2. Load the new SBP monthly Raast workbook and, when SBP publishes a new Payment Systems Review, the PSR PDF itself. The dashboard reads the PDF's annexure tables directly.
 3. Click **Check files** and review the summary and data checks.
 4. Click **Download updated index.html**.
 5. In this repository, click **Add file → Upload files**, drop in the new `index.html`, and commit. The site refreshes within a minute or two.
