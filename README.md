@@ -15,6 +15,12 @@ If a file can't be read (for example SBP changes a table layout), nothing on the
 
 Older PSR issues never overwrite figures that came from a newer issue or from an SBP Annual Review.
 
+## Automatic PSR check
+
+On the 1st and 16th of every month the automation checks SBP's [Payment Systems Review page](https://www.sbp.org.pk/our-operations/publications/payment-systems-review/365). If a new quarterly issue has been published, it downloads the PDF, updates the dashboard and records the issue in `data/psr-seen.json`. To check immediately, open **Actions → Update dashboard → Run workflow**.
+
+If SBP changes its page so the check cannot read it, the run shows a red cross in **Actions**; uploading the PDF to `data/inbox` manually still works.
+
 ## How it works
 
 - `index.html` is the whole dashboard, with the data embedded in it.

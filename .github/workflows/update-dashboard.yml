@@ -1,11 +1,16 @@
 name: Update dashboard
 
-# Runs when files are uploaded to data/inbox and rebuilds index.html from them.
+# Rebuilds index.html from files in data/inbox. Runs when:
+#  - files are uploaded to data/inbox
+#  - on the 1st and 16th of each month, after checking SBP's website for a new Payment Systems Review
+#  - on demand (Actions tab -> Update dashboard -> Run workflow)
 # Vercel publishes the site automatically whenever index.html changes on main.
 on:
   push:
     branches: [main]
     paths: ['data/inbox/**']
+  schedule:
+    - cron: '0 5 1,16 * *'   # 10:00 Pakistan time
   workflow_dispatch:
 
 permissions:
@@ -21,6 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Look for a new Payment Systems Review on SBP's website
+        if: github.event_name != 'push'
+        run: node build/fetch-psr.js
+
       - name: Check for new files
         id: inbox
         run: |
@@ -29,11 +42,6 @@ jobs:
           else
             echo "new=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - uses: actions/setup-node@v4
-        if: steps.inbox.outputs.new == 'true'
-        with:
-          node-version: 20
 
       - name: Read files and rebuild index.html
         if: steps.inbox.outputs.new == 'true'
