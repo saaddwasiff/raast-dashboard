@@ -80,7 +80,8 @@ function mergePSR(D, P, srcLabel){
       ['atm','atm_cw','pos','ib','mb','call','ecom','ewallet','bbwallet','dd','bbagent','branch'].forEach(function(k){ var v=P.channels[q][k+'_v']; if(v==null) return;
         if(c[k+'_v']!=null&&Math.abs(c[k+'_v']-v)>0.05) changed.push(q+' '+(PSR_NAMES[k]||k)+' volume '+c[k+'_v']+' → '+v+' Mn'); });
       Object.assign(c,P.channels[q]); c.src=srcLabel; }
-    if(P.eco[q]){ var e=D.eco.find(function(x){return x.q===q;}); if(!e){e={q:q};D.eco.push(e);} Object.keys(P.eco[q]).forEach(function(k){ if(P.eco[q][k]!=null) e[k]=P.eco[q][k]; }); }
+    if(P.eco[q]){ var e=D.eco.find(function(x){return x.q===q;}); if(!e){e={q:q};D.eco.push(e);}
+      if(srcIdx(e.src)>issue){ skipped.push(q+' (ecosystem)'); } else Object.keys(P.eco[q]).forEach(function(k){ if(P.eco[q][k]!=null) e[k]=P.eco[q][k]; }); }
   });
   [D.quarterly,D.channels,D.eco].forEach(function(a){a.sort(function(x,y){return qIndexP(x.q)-qIndexP(y.q);});});
   return {changed:changed, skipped:skipped};
