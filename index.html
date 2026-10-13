@@ -156,6 +156,16 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
 .ypill{display:inline-block;min-width:58px;text-align:center;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px}
 .ypill.neg{background:var(--crit-bg);color:var(--crit)}.ypill.t1{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}.ypill.t2{background:var(--accent-soft);color:var(--ink)}.ypill.t3{background:var(--accent);color:var(--accent-ink)}.ypill.t4{background:var(--good);color:var(--surface)}
 .eco-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--muted)}
+/* monthly detail: bold headers and month column, crosshair highlight */
+.tbl.xhair thead th{color:var(--ink);font-weight:700}
+.tbl.xhair tbody td:first-child{font-weight:700;color:var(--ink)}
+.tbl.xhair tbody tr:hover{background:transparent}
+.tbl.xhair td,.tbl.xhair th{transition:background-color .08s}
+.tbl.xhair .xh-row td,.tbl.xhair .xh-col{background:var(--accent-soft)}
+.tbl.xhair thead th.xh-col{background:var(--accent-soft);color:var(--ink)}
+.tbl.xhair td.xh-cell{background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:4px}
+.tbl.xhair td.xh-cell.der{color:var(--accent-ink)}
+.tbl.xhair tbody td{cursor:default}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <div id="app" data-keep></div>
@@ -793,8 +803,26 @@ function renderMonthly(){
   mk('cMTkt',{type:'line',data:{labels:all.map(function(r){return mLabel(r.m);}),datasets:[line('P2P',all.map(function(r){return r.tkt_p2p;}),t.p2p,{pointRadius:2}),line('P2M',all.map(function(r){return r.tkt_p2m;}),t.p2m,{pointRadius:2})]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:axisX(t),y:axisY(t,function(v){return (v/1000)+'k';})},plugins:{tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': PKR '+n0(c.parsed.y);}}}}}});
   legend('lgMTkt',[{t:'P2P',c:t.p2p,kind:'line'},{t:'P2M',c:t.p2m,kind:'line'}]);
   var rs=X.m.slice().reverse();
-  $('tMonthly').innerHTML='<thead><tr><th>Month</th><th>P2P vol</th><th>P2M vol</th><th>Bulk vol</th><th>Total vol</th><th>MoM</th><th>YoY</th><th>Total value</th><th>YoY</th><th>IDs (Mn)</th><th>Merchants (Mn)</th><th>P2P ticket</th><th>P2M ticket</th><th>Bulk ticket</th></tr></thead><tbody>'+
+  $('tMonthly').className='tbl xhair';$('tMonthly').innerHTML='<thead><tr><th>Month</th><th>P2P vol</th><th>P2M vol</th><th>Bulk vol</th><th>Total vol</th><th>MoM</th><th>YoY</th><th>Total value</th><th>YoY</th><th>IDs (Mn)</th><th>Merchants (Mn)</th><th>P2P ticket</th><th>P2M ticket</th><th>Bulk ticket</th></tr></thead><tbody>'+
    rs.map(function(r){var d=r.bulk_derived?' class="der"':'';return '<tr><td>'+mLabel(r.m)+'</td><td>'+n1(r.p2p_v)+'</td><td>'+n1(r.p2m_v,2)+'</td><td'+d+'>'+n1(r.bulk_v,2)+'</td><td><b>'+n1(r.tot_v)+'</b></td><td>'+pct(r.mom_v,1,true)+'</td><td>'+pct(r.yoy_v,0,true)+'</td><td>'+n0(r.tot_val)+'</td><td>'+pct(r.yoy_val,0,true)+'</td><td>'+n1(r.ids,2)+'</td><td>'+n1(r.merchants,2)+'</td><td>'+n0(r.tkt_p2p)+'</td><td>'+n0(r.tkt_p2m)+'</td><td'+d+'>'+n0(r.tkt_bulk)+'</td></tr>';}).join('')+'</tbody>';
+  crosshair($('tMonthly'));
+}
+
+/* Row + column highlight on hover (or tap) for dense tables */
+function crosshair(tbl){
+  if(tbl._xh) return; tbl._xh=true;
+  var lastCol=-1;
+  function clear(){ tbl.querySelectorAll('.xh-row,.xh-col,.xh-cell').forEach(function(el){el.classList.remove('xh-row','xh-col','xh-cell');}); lastCol=-1; }
+  function mark(td){
+    var tr=td.parentElement, col=td.cellIndex; clear();
+    if(tr.parentElement.tagName==='TBODY') tr.classList.add('xh-row');
+    if(col>0){ Array.prototype.forEach.call(tbl.rows,function(r){ var c=r.cells[col]; if(c) c.classList.add('xh-col'); }); }
+    if(tr.parentElement.tagName==='TBODY'&&col>0) td.classList.add('xh-cell');
+    lastCol=col;
+  }
+  tbl.addEventListener('mouseover',function(e){ var td=e.target.closest('td,th'); if(td&&tbl.contains(td)) mark(td); });
+  tbl.addEventListener('mouseleave',clear);
+  tbl.addEventListener('click',function(e){ var td=e.target.closest('td,th'); if(td) mark(td); });
 }
 
 /* ---------- quarterly ---------- */
