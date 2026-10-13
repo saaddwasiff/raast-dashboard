@@ -1,16 +1,15 @@
 name: Update dashboard
 
-# Runs when files are uploaded to data/inbox (and on any other change to main),
-# rebuilds index.html from them, then publishes the site.
+# Runs when files are uploaded to data/inbox and rebuilds index.html from them.
+# Vercel publishes the site automatically whenever index.html changes on main.
 on:
   push:
     branches: [main]
+    paths: ['data/inbox/**']
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: dashboard
@@ -55,22 +54,3 @@ jobs:
       - name: Report a failed read
         if: failure()
         run: cat data/last-update.md >> "$GITHUB_STEP_SUMMARY" || true
-
-      - name: Prepare site
-        run: |
-          mkdir -p _site
-          cp index.html robots.txt _site/
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4

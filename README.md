@@ -2,7 +2,7 @@
 
 Internal dashboard tracking Raast (Pakistan's instant payment system) from SBP monthly Raast reporting and the SBP Payment Systems Review. Built and maintained by the Raast Ecosystem Development team, Karandaaz Pakistan.
 
-Live site: https://saaddwasiff.github.io/raast-dashboard/
+Live site: https://raast-dashboard.vercel.app/
 
 ## Updating the data
 
@@ -18,7 +18,8 @@ Older PSR issues never overwrite figures that came from a newer issue or from an
 ## How it works
 
 - `index.html` is the whole dashboard, with the data embedded in it.
-- `.github/workflows/update-dashboard.yml` runs on every change to `main`: it reads anything in `data/inbox` with `build/update.js` (the same parsing code the dashboard uses), saves the updated `index.html`, and publishes the site.
+- `.github/workflows/update-dashboard.yml` runs when files are added to `data/inbox`: it reads them with `build/update.js` (the same parsing code the dashboard uses) and saves the updated `index.html`.
+- Vercel watches the `main` branch and republishes the site whenever `index.html` changes. Raw data and build scripts are excluded from the site by `.vercelignore`.
 - `build/lib/` holds the parsing and calculation code shared with the page.
 
 The repository is public: anyone can view the site and the files in it.
