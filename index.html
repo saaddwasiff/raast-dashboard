@@ -166,6 +166,30 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
 .tbl.xhair td.xh-cell{background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:4px}
 .tbl.xhair td.xh-cell.der{color:var(--accent-ink)}
 .tbl.xhair tbody td{cursor:default}
+/* entrance and export controls */
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.panel.enter .card,.panel.enter .kpi,.panel.enter .toolbar{animation:rise .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 60ms)}
+.panel.enter .kpi .k-s{animation:fadein .5s ease both;animation-delay:calc(var(--i,0) * 70ms + 950ms)}
+.k-v{font-variant-numeric:tabular-nums}
+.readings li{font-size:15px;line-height:1.55}
+.toolbar{align-items:center}
+.pdf-btn{margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px}
+.one-btn{padding:5px 12px;font-size:12.5px}
+.xp{position:relative;margin-left:auto;align-self:flex-start}
+.card-h .seg+.xp{margin-left:8px}
+.xp-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
+.xp-btn:hover{color:var(--ink);border-color:var(--accent)}
+.xp-btn:disabled{opacity:.6;cursor:progress}
+.xp-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:5px;min-width:250px;display:flex;flex-direction:column}
+.xp-menu[hidden]{display:none!important}
+.xp-menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.xp-menu button small{font-weight:400;font-size:11.5px;color:var(--muted)}
+.xp-menu button:hover,.xp-menu button:focus-visible{background:var(--accent-soft)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:8px;font-size:13px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
+#toast.bad{background:var(--crit)}
+@media (max-width:600px){.xp-btn span,.pdf-btn span{display:none}.xp-menu{min-width:220px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <div id="app" data-keep></div>
@@ -215,7 +239,7 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
       <div class="legend" id="lgOvShare"></div>
     </article>
     <article class="card">
-      <div class="card-h"><div><h2>Last 12 months</h2><p class="note">All use cases, SBP monthly reporting</p></div></div>
+      <div class="card-h"><div><h2>Last 12 months</h2><p class="note">All use cases, SBP monthly reporting (provisional)</p></div></div>
       <div class="chart h260"><canvas id="cOvMonthly"></canvas></div>
       <div class="legend" id="lgOvMonthly"></div>
     </article>
@@ -685,7 +709,7 @@ if(typeof module!=='undefined') module.exports={derive:derive,growthTable:growth
 var PUBLISHED=JSON.parse(document.getElementById('raast-data').textContent);
 var D=PUBLISHED, X=null, staged=null, previewing=false;
 var REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-var charts={}, built={}, current='overview';
+var charts={}, built={}, current='overview', CAPTURE=null, NOANIM=false, ANIM_SEQ=0, ANIM_T=0;
 var st={ov:'v',m:'v',mRange:'12',q:'v',qRange:'fy24',p:'v',win:2,longRun:0.25,cap:0.75,qSel:null};
 
 /* ---------- formatting ---------- */
@@ -704,17 +728,28 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function $(id){return document.getElementById(id);}
 
 /* ---------- theme ---------- */
-function T(){var cs=getComputedStyle(document.documentElement);function g(n){return cs.getPropertyValue(n).trim();}
+var LIGHT={ink:'#0e1a17',ink2:'#47544f',muted:'#76837e',line:'#dde4e1',grid:'#e8edeb',surface:'#ffffff',accent:'#0b6e4f',p2p:'#2a78d6',p2m:'#eb6834',bulk:'#1baf7a',other:'#c5ccc9',dig:'#76837e',good:'#006300',crit:'#b42f2f'};
+function T(){if(CAPTURE)return LIGHT;var cs=getComputedStyle(document.documentElement);function g(n){return cs.getPropertyValue(n).trim();}
   return {ink:g('--ink'),ink2:g('--ink-2'),muted:g('--muted'),line:g('--line'),grid:g('--grid'),surface:g('--surface'),accent:g('--accent'),p2p:g('--s-p2p'),p2m:g('--s-p2m'),bulk:g('--s-bulk'),other:g('--s-other'),dig:g('--s-dig'),good:g('--good'),crit:g('--crit')};}
 function alpha(hex,a){var h=hex.replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c;}).join('');var n=parseInt(h,16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
 function chartDefaults(){var t=T();Chart.defaults.font.family='"Instrument Sans",ui-sans-serif,system-ui,sans-serif';Chart.defaults.font.size=12;Chart.defaults.color=t.muted;Chart.defaults.borderColor=t.grid;
   Chart.defaults.animation=REDUCED?false:{duration:650,easing:'easeOutCubic'};
   Chart.defaults.plugins.legend.display=false;Chart.defaults.transitions.resize={animation:{duration:0}};
   var tp=Chart.defaults.plugins.tooltip;tp.backgroundColor=t.ink;tp.titleColor=t.surface;tp.bodyColor=t.surface;tp.padding=10;tp.cornerRadius=6;tp.boxPadding=4;tp.usePointStyle=true;tp.titleFont={weight:'600'};tp.animation=false;tp.caretSize=6;Chart.defaults.transitions.active={animation:{duration:0}};Chart.defaults.hover={mode:'index',intersect:false};}
-function legend(id,items){var el=$(id);if(!el)return;el.innerHTML=items.map(function(i){return '<span><i class="sw '+(i.kind||'')+'" style="'+(i.kind?'border-color:':'background:')+i.c+'"></i>'+esc(i.t)+'</span>';}).join('');}
-function mk(id,cfg){if(charts[id])charts[id].destroy();var c=$(id);if(!c)return null;var ch=new Chart(c.getContext('2d'),cfg);charts[id]=ch;
-  /* Safety net: if the host frame pauses animation frames or resizes mid-animation, force the finished chart. */
-  [120,1400].forEach(function(ms){setTimeout(function(){if(charts[id]!==ch)return;try{ch.stop();ch.resize();ch.update('none');}catch(e){}},ms);});
+function legend(id,items){if(CAPTURE)return;var el=$(id);if(!el)return;el.innerHTML=items.map(function(i){return '<span><i class="sw '+(i.kind||'')+'" style="'+(i.kind?'border-color:':'background:')+i.c+'"></i>'+esc(i.t)+'</span>';}).join('');}
+function mk(id,cfg){
+  if(CAPTURE){CAPTURE.cfg[id]=cfg;var card=$(id)&&$(id).closest('.card');CAPTURE.meta[id]={title:card&&card.querySelector('h2')?card.querySelector('h2').textContent:'',note:card&&card.querySelector('.note')?card.querySelector('.note').textContent:''};return null;}
+  if(charts[id])charts[id].destroy();var c=$(id);if(!c)return null;
+  var o=cfg.options||(cfg.options={});
+  if(REDUCED||NOANIM){o.animation=false;}
+  else{
+    var now=Date.now();if(now-ANIM_T>400)ANIM_SEQ=0;ANIM_T=now;var base=Math.min(ANIM_SEQ++,6)*110;
+    /* bars grow from the baseline one after another; lines draw left to right */
+    if(o.animation===undefined)o.animation={duration:800,easing:'easeOutQuart',delay:function(ctx){return ctx.type==='data'&&ctx.mode==='default'?base+ctx.dataIndex*22:0;}};
+    var n=(cfg.data.labels||[]).length;
+    (cfg.data.datasets||[]).forEach(function(ds){if((ds.type||cfg.type)==='line'&&!ds.animations)ds.animations=progressive(n,base);});
+  }
+  var ch=new Chart(c.getContext('2d'),cfg);charts[id]=ch;
   return ch;}
 function axisY(t,fmt,extra){return Object.assign({beginAtZero:true,grid:{color:t.grid},border:{display:false},ticks:{callback:fmt,maxTicksLimit:6}},extra||{});}
 function axisX(t,extra){return Object.assign({grid:{display:false},border:{color:t.line},ticks:{maxRotation:0,autoSkipPadding:10}},extra||{});}
@@ -722,13 +757,27 @@ function bar(label,data,color,stack){return {type:'bar',label:label,data:data,ba
 function line(label,data,color,o){return Object.assign({type:'line',label:label,data:data,borderColor:color,backgroundColor:color,borderWidth:2,pointRadius:0,pointHoverRadius:5,tension:.25,spanGaps:true},o||{});}
 function shortV(v){return v>=1000?(v/1000).toFixed(v>=10000?0:1)+'bn':v>=10?Math.round(v)+'':v.toFixed(1);}
 function shortP(v){return v>=1000?(v/1000).toFixed(v>=10000?0:1)+'tn':Math.round(v)+'bn';}
-function progressive(n){if(REDUCED)return false;var step=Math.max(60,700/n);return {x:{type:'number',easing:'linear',duration:step,from:NaN,delay:function(ctx){if(ctx.type!=='data'||ctx.xStarted)return 0;ctx.xStarted=true;return ctx.index*step;}},y:{type:'number',easing:'linear',duration:step,from:function(ctx){if(ctx.index===0||!ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index-1])return ctx.chart.scales.y.getPixelForValue(0);return ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index-1].getProps(['y'],true).y;},delay:function(ctx){if(ctx.type!=='data'||ctx.yStarted)return 0;ctx.yStarted=true;return ctx.index*step;}}};}
+function progressive(n,base){if(REDUCED||NOANIM||CAPTURE)return false;base=base||0;var step=Math.max(45,650/Math.max(n,1));return {x:{type:'number',easing:'linear',duration:step,from:NaN,delay:function(ctx){if(ctx.type!=='data'||ctx.xStarted)return 0;ctx.xStarted=true;return base+ctx.index*step;}},y:{type:'number',easing:'linear',duration:step,from:function(ctx){if(ctx.index===0||!ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index-1])return ctx.chart.scales.y.getPixelForValue(0);return ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index-1].getProps(['y'],true).y;},delay:function(ctx){if(ctx.type!=='data'||ctx.yStarted)return 0;ctx.yStarted=true;return base+ctx.index*step;}}};}
 
 /* ---------- header ---------- */
 function renderHeader(){
   var lm=X.m[X.m.length-1], lq=X.q[X.q.length-1];
-  $('asof').innerHTML='<span class="chip">Monthly <b>'+(lm?mLong(lm.m):'–')+'</b></span><span class="chip">PSR <b>'+(lq?lq.q:'–')+'</b></span><span class="chip">Updated <b>'+esc(D.meta.updated||'')+'</b></span>';
-  $('footSrc').textContent='Sources: '+(D.meta.monthlyFile||'SBP monthly Raast reporting')+' · '+(D.meta.psrFile||'SBP Payment Systems Review')+'. Fiscal years run July–June.';
+  $('asof').innerHTML='<span class="chip">Monthly <b>'+(lm?mLong(lm.m):'–')+'</b> · provisional</span><span class="chip">PSR <b>'+(lq?lq.q:'–')+'</b></span><span class="chip">Updated <b>'+esc(D.meta.updated||'')+'</b></span>';
+  $('footSrc').textContent='Sources: '+(D.meta.monthlyFile||'SBP monthly Raast reporting')+' · '+(D.meta.psrFile||'SBP Payment Systems Review')+'. Monthly figures are provisional (SBP monthly reporting); quarterly and annual figures are SBP\'s revised figures. Fiscal years run July–June.';
+}
+
+/* ---------- number count-up ---------- */
+function countUp(root){
+  if(REDUCED||NOANIM||CAPTURE||!root)return;
+  root.querySelectorAll('.kpi').forEach(function(kpi,i){
+    var v=kpi.querySelector('.k-v');if(!v)return;var nodes=[],w=document.createTreeWalker(v,NodeFilter.SHOW_TEXT);while(w.nextNode())nodes.push(w.currentNode);
+    nodes.forEach(function(nd){var m=nd.nodeValue.match(/\d[\d,]*(\.\d+)?/);if(!m)return;
+      var txt=m[0],dec=m[1]?m[1].length-1:0,target=parseFloat(txt.replace(/,/g,'')),comma=txt.indexOf(',')>=0,pre=nd.nodeValue.slice(0,m.index),post=nd.nodeValue.slice(m.index+txt.length),start=null,dur=1100,delay=i*70;
+      function f(x){var s=x.toFixed(dec);if(comma){var p=s.split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');s=p.join('.');}return s;}
+      nd.nodeValue=pre+f(0)+post;
+      function step(ts){if(start===null)start=ts+delay;var t=Math.min(1,Math.max(0,(ts-start)/dur)),e=1-Math.pow(1-t,3);nd.nodeValue=pre+(t<1?f(target*e):txt)+post;if(t<1)requestAnimationFrame(step);}
+      requestAnimationFrame(step);});
+  });
 }
 
 /* ---------- overview ---------- */
@@ -742,12 +791,13 @@ function renderOverview(){
    {l:mLong(L.m)+' value',v:fP(L.tot_val).replace('PKR ','<small>PKR</small> '),s:deltaHTML(L.yoy_val,'YoY')+' '+deltaHTML(L.mom_val,'MoM')},
    {l:'Share of digital payments, '+lq.q,v:pct(lq.share_v)+'<small>vol</small>',s:'<span><b>'+pct(lq.share_val)+'</b> of value</span><span>from '+pct(fq.share_v)+' / '+pct(fq.share_val)+' in '+fq.q+'</span>'},
    {l:'Last 12 months',v:fV(ltmV).replace(' bn','<small>bn</small>').replace(' Mn','<small>Mn</small>'),s:'<span>'+fP(ltmVal)+'</span>'+(pV?deltaHTML(ltmV/pV-1,'vs prior 12m'):'')},
-   {l:'Raast P2P IDs',v:n1(L.ids,1)+'<small>Mn</small>',s:'<span>'+(L.banks?L.banks+' banks/MFBs/EMIs eligible':'')+'</span>'},
-   {l:'Registered P2M merchants',v:n1(L.merchants,2)+'<small>Mn</small>',s:'<span>'+(L.msps||'–')+' MSPs</span><span>'+(L.yoy_p2m!=null?mult(1+L.yoy_p2m)+' P2M volume YoY':'')+'</span>'},
+   {l:'Raast P2P IDs, as of '+mLong(L.m),v:n1(L.ids,1)+'<small>Mn</small>',s:'<span>'+(L.banks?L.banks+' banks/MFBs/EMIs eligible':'')+'</span>'},
+   {l:'Registered P2M merchants, as of '+mLong(L.m),v:n1(L.merchants,2)+'<small>Mn</small>',s:'<span>'+(L.msps||'–')+' MSPs</span><span>'+(L.yoy_p2m!=null?mult(1+L.yoy_p2m)+' P2M volume YoY':'')+'</span>'},
    {l:'P2M transactions, '+mLabel(L.m),v:fV(L.p2m_v).replace(' Mn','<small>Mn</small>'),s:'<span>'+fP(L.p2m_val)+'</span><span>'+pct(L.p2m_v/L.tot_v)+' of Raast volume</span>'},
    {l:'Launch to date'+(cum&&cum.label?', '+cum.label:''),v:cum?fV(cum.vol).replace(' bn','<small>bn</small>'):'–',s:cum?'<span>'+fP(cum.val)+'</span>':''}
   ];
-  $('kpis').innerHTML=k.map(function(x){return '<div class="kpi'+(x.lead?' lead':'')+'"><span class="k-l">'+esc(x.l)+'</span><span class="k-v">'+x.v+'</span><span class="k-s">'+x.s+'</span></div>';}).join('');
+  $('kpis').innerHTML=k.map(function(x,i){return '<div class="kpi'+(x.lead?' lead':'')+'" style="--i:'+i+'"><span class="k-l">'+esc(x.l)+'</span><span class="k-v">'+x.v+'</span><span class="k-s">'+x.s+'</span></div>';}).join('');
+  countUp($('kpis'));
   renderReadings();
   drawOvAnnual();
   // share
@@ -794,7 +844,7 @@ function renderMonthly(){
     options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:axisX(t,{stacked:true}),y:axisY(t,fmt,{stacked:true})},
       plugins:{tooltip:{callbacks:{label:function(c){return ' '+c.dataset.label+': '+fM(metric,c.parsed.y);},footer:function(items){var r=rows[items[0].dataIndex];return 'Total '+fM(metric,r['tot'+sfx])+(r['yoy'+sfx]!=null?'  ·  YoY '+pct(r['yoy'+sfx],0,true):'');}}}}}});
   $('mVolTitle').textContent='Monthly Raast '+(metric==='v'?'transactions':'value')+' by use case';
-  $('mVolNote').textContent=(metric==='v'?'Million transactions':'PKR billion')+'. Lighter bulk bars are derived from the all-use-case total.';
+  $('mVolNote').textContent=(metric==='v'?'Million transactions':'PKR billion')+'. Provisional SBP monthly figures. Lighter bulk bars are derived from the all-use-case total.';
   legend('lgMVol',[{t:'P2P',c:t.p2p},{t:'P2M',c:t.p2m},{t:'Bulk',c:t.bulk}]);
   var all=X.m;
   mk('cMP2M',{data:{labels:all.map(function(r){return mLabel(r.m);}),datasets:[bar('P2M transactions',all.map(function(r){return r.p2m_v;}),t.p2m)]},options:{maintainAspectRatio:false,scales:{x:axisX(t),y:axisY(t,function(v){return v;})},plugins:{tooltip:{callbacks:{label:function(c){var r=all[c.dataIndex];return [' '+fV(r.p2m_v),' '+fP(r.p2m_val)];}}}}}});
@@ -1054,11 +1104,254 @@ function initCapabilities(){
   }).catch(function(){$('upRole').textContent='Preview works here. Publishing is not available in this view.';});
 }
 
+/* ---------- exports: chart images, PowerPoint charts, PDF reports ---------- */
+var XF='Arial, Helvetica, sans-serif';
+var SECTION={overview:'Overview',monthly:'Monthly',quarterly:'Quarterly (PSR)',ecosystem:'Ecosystem',outlook:'Growth & 5-year outlook'};
+var LIBS={pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'],
+  pptx:['https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'],
+  svg:['https://cdn.jsdelivr.net/npm/canvas2svg@1.0.16/canvas2svg.js']};
+var libReady={};
+function needLib(k){if(!libReady[k])libReady[k]=LIBS[k].reduce(function(p,u){return p.then(function(){return loadScript(u);});},Promise.resolve()).catch(function(e){libReady[k]=null;throw e;});return libReady[k];}
+function panelOf(id){var el=$(id);return el&&el.closest('.panel')?el.closest('.panel').dataset.panel:null;}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function slug(s){return String(s).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'chart';}
+function quietRender(panel){NOANIM=true;try{RENDER[panel]();}finally{NOANIM=false;}}
+/* Re-run a section's drawing code in light colours and record each chart's configuration instead of drawing it. */
+function capture(panel,over){
+  var saved={};if(over)Object.keys(over).forEach(function(k){saved[k]=st[k];st[k]=over[k];});
+  CAPTURE={cfg:{},meta:{}};var c;
+  try{RENDER[panel]();}finally{c=CAPTURE;CAPTURE=null;Object.keys(saved).forEach(function(k){st[k]=saved[k];});}
+  var el=document.querySelector('[data-panel="'+panel+'"]');
+  if(el&&!el.hidden)quietRender(panel);
+  return c;
+}
+function footerText(){
+  var lm=X.m[X.m.length-1],lq=X.q[X.q.length-1];
+  return 'Source: SBP monthly Raast reporting to '+mLong(lm.m)+' (provisional); SBP Payment Systems Review and Annual Review to '+lq.q+' (revised). Raast Growth Dashboard, Karandaaz Pakistan.';
+}
+/* Chart.js plugins used only for exported images */
+var PL_BG={id:'rdBg',beforeDraw:function(ch){var x=ch.ctx;x.save();x.fillStyle='#ffffff';x.fillRect(0,0,ch.width,ch.height);x.restore();}};
+var PL_FOOT={id:'rdFoot',afterDraw:function(ch,a,o){if(!o||!o.text)return;var x=ch.ctx;x.save();x.font=(o.fs-2)+'px '+XF;x.fillStyle=LIGHT.muted;x.textAlign='left';x.textBaseline='bottom';x.fillText(o.text,8,ch.height-6);x.restore();}};
+var PL_LABELS={id:'rdLabels',afterDatasetsDraw:function(ch,a,o){
+  if(!o||!o.on)return;var x=ch.ctx,horiz=ch.options.indexAxis==='y',vs=ch.scales[horiz?'x':'y'];if(!vs)return;
+  var cb=vs.options.ticks&&vs.options.ticks.callback;
+  function rnd(v){var a=Math.abs(v);return a>=100?Math.round(v):a>=10?Math.round(v*10)/10:Math.round(v*100)/100;}
+  function f(v){var r=rnd(v);try{return cb?String(cb.call(vs,r,0,[])):String(r);}catch(e){return String(r);}}
+  var L=[],metas=ch.getSortedVisibleDatasetMetas(),bars=metas.filter(function(m){return m.type==='bar';}),lines=metas.filter(function(m){return m.type==='line';});
+  var n=(ch.data.labels||[]).length,stacked=!!vs.options.stacked&&bars.length>1;
+  if(stacked){ if(n<=24)for(var i=0;i<n;i++){var tot=0,edge=null,px=null;bars.forEach(function(m){var v=ch.data.datasets[m.index].data[i],el=m.data[i];if(v==null||!el)return;tot+=v;var e=horiz?el.x:el.y;edge=edge==null?e:(horiz?Math.max(edge,e):Math.min(edge,e));px=horiz?el.y:el.x;});
+      if(edge!=null)L.push(horiz?{x:edge+6,y:px,t:f(tot),al:'left',bl:'middle'}:{x:px,y:edge-5,t:f(tot),al:'center',bl:'bottom'});} }
+  else{ var cnt=0;bars.forEach(function(m){m.data.forEach(function(el,i){if(ch.data.datasets[m.index].data[i]!=null)cnt++;});});
+    bars.forEach(function(m){var d=ch.data.datasets[m.index].data,last=-1;d.forEach(function(v,i){if(v!=null)last=i;});
+      m.data.forEach(function(el,i){var v=d[i];if(v==null||!el)return;if(cnt>36&&i!==last)return;
+        if(horiz)L.push({x:el.x+6,y:el.y,t:f(v),al:'left',bl:'middle'});else L.push(v>=0?{x:el.x,y:el.y-5,t:f(v),al:'center',bl:'bottom'}:{x:el.x,y:el.y+5,t:f(v),al:'center',bl:'top'});});});}
+  var ends=[];
+  lines.forEach(function(m){var d=ch.data.datasets[m.index].data,last=-1;d.forEach(function(v,i){if(v!=null)last=i;});if(last<0)return;
+    if(lines.length===1&&!bars.length&&n<=14)m.data.forEach(function(el,i){if(d[i]!=null&&el&&i!==last)L.push({x:el.x,y:el.y-8,t:f(d[i]),al:'center',bl:'bottom'});});
+    var el=m.data[last];if(el)ends.push({x:el.x+8,y:el.y,t:f(d[last]),al:'left',bl:'middle',c:ch.data.datasets[m.index].borderColor});});
+  ends.sort(function(p,q){return p.y-q.y;});for(var k=1;k<ends.length;k++)if(ends[k].y-ends[k-1].y<o.fs+2)ends[k].y=ends[k-1].y+o.fs+2;
+  x.save();x.font='bold '+o.fs+'px '+XF;x.lineJoin='round';
+  /* crowded vertical bar labels: drop the unit, then shrink, so neighbours never overlap */
+  if(!horiz&&L.length>1){var fsz=o.fs,wide=function(){var g=Infinity,mw=0;for(var j=0;j<L.length;j++){mw=Math.max(mw,x.measureText(L[j].t).width);if(j)g=Math.min(g,Math.abs(L[j].x-L[j-1].x)||Infinity);}return mw+4>g;};
+    if(wide())L.forEach(function(p){p.t=p.t.replace(/\s*(Mn|bn|tn)$/,function(m0,u){return u==='Mn'?'':m0.trim();});});
+    while(wide()&&fsz>o.fs*0.7){fsz-=1;x.font='bold '+fsz+'px '+XF;}}
+  L.concat(ends).forEach(function(p){x.textAlign=p.al;x.textBaseline=p.bl;x.lineWidth=3;x.strokeStyle='#ffffff';x.strokeText(p.t,p.x,p.y);x.fillStyle=typeof p.c==='string'?p.c:LIGHT.ink;x.fillText(p.t,p.x,p.y);});
+  x.restore();}};
+/* opts: fs (font px), title (bool), labels (bool), footer (bool), dpr */
+function prepExport(cfg,meta,o){
+  var op=cfg.options=cfg.options||{};op.animation=false;op.responsive=false;op.maintainAspectRatio=false;op.devicePixelRatio=o.dpr||1;op.events=[];
+  var pl=op.plugins=op.plugins||{};
+  pl.tooltip={enabled:false};
+  pl.legend={display:true,position:'bottom',align:'start',labels:{color:LIGHT.ink2,boxWidth:14,boxHeight:10,padding:14,font:{size:o.fs,family:XF}}};
+  pl.title={display:!!o.title,text:meta.title,align:'start',color:LIGHT.ink,font:{size:o.fs+7,weight:'bold',family:XF},padding:{top:2,bottom:4}};
+  pl.subtitle={display:!!o.title&&!!meta.note,text:meta.note,align:'start',color:LIGHT.muted,font:{size:o.fs,family:XF},padding:{bottom:16}};
+  pl.rdLabels={on:o.labels!==false,fs:o.fs};pl.rdFoot={text:o.footer?footerText():'',fs:o.fs};
+  var hasLine=(cfg.data.datasets||[]).some(function(d){return (d.type||cfg.type)==='line';});
+  op.layout={padding:{top:10,right:hasLine||op.indexAxis==='y'?64:16,bottom:o.footer?26:6,left:8}};
+  ['x','y'].forEach(function(a){var s=op.scales&&op.scales[a];if(!s)return;s.ticks=Object.assign({},s.ticks,{color:LIGHT.muted,font:{size:o.fs,family:XF}});if(s.title)s.title=Object.assign({},s.title,{color:LIGHT.muted,font:{size:o.fs,family:XF}});if(s.grid&&s.grid.display!==false)s.grid=Object.assign({},s.grid,{color:LIGHT.grid});});
+  cfg.plugins=(cfg.plugins||[]).concat([PL_BG,PL_LABELS,PL_FOOT]);
+  return cfg;
+}
+function withExportDefaults(fn){var d=Chart.defaults,keep={c:d.color,b:d.borderColor,f:d.font.family};d.color=LIGHT.muted;d.borderColor=LIGHT.grid;d.font.family=XF;try{return fn();}finally{d.color=keep.c;d.borderColor=keep.b;d.font.family=keep.f;}}
+function chartPNG(cfg,w,h,dpr){return withExportDefaults(function(){
+  var host=document.createElement('div');host.style.cssText='position:fixed;left:-20000px;top:0;width:'+w+'px;height:'+h+'px;';
+  var cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.style.width=w+'px';cv.style.height=h+'px';host.appendChild(cv);document.body.appendChild(host);
+  var ch=new Chart(cv.getContext('2d'),cfg);var url=cv.toDataURL('image/png');ch.destroy();host.remove();return url;});}
+function chartSVG(cfg,w,h){return withExportDefaults(function(){
+  var ctx=new window.C2S(w,h);
+  /* canvas2svg lacks a few canvas methods Chart.js uses */
+  if(!ctx.resetTransform)ctx.resetTransform=function(){};
+  ctx.__dash=[];ctx.setLineDash=function(a){this.__dash=(a||[]).slice();};ctx.getLineDash=function(){return this.__dash;};
+  var stroke0=ctx.stroke;ctx.stroke=function(){stroke0.apply(this,arguments);var el=this.__currentElement;if(el&&el.setAttribute&&this.__dash.length)el.setAttribute('stroke-dasharray',this.__dash.join(','));};
+  var save0=ctx.save,restore0=ctx.restore,dstack=[];ctx.save=function(){dstack.push(this.__dash);return save0.apply(this,arguments);};ctx.restore=function(){if(dstack.length)this.__dash=dstack.pop();return restore0.apply(this,arguments);};
+  /* canvas2svg leaves clip paths empty (it never writes the pending path data), which hides bars and lines */
+  var clip0=ctx.clip;ctx.clip=function(){if(this.__currentElement&&this.__currentElement.nodeName==='path')this.__applyCurrentDefaultPath();return clip0.apply(this,arguments);};
+  var fake={width:w,height:h,style:{},getContext:function(){return ctx;},addEventListener:function(){},removeEventListener:function(){},getAttribute:function(){return null;},setAttribute:function(){}};
+  ctx.canvas=fake;cfg.platform=Chart.BasicPlatform;cfg.options.devicePixelRatio=1;
+  /* lines must be drawn as plain paths (not Path2D) for the SVG context */
+  (cfg.data.datasets||[]).forEach(function(d){var t=d.type||cfg.type||'bar';if(t==='line'&&!d.segment)d.segment={};if(t==='bar')d.borderWidth=0;});
+  var ch=new Chart(fake,cfg);var svg=ctx.getSerializedSvg(true);ch.destroy();return svg;});}
+function hex(c){if(!c||typeof c!=='string')return '76837E';if(c[0]==='#'){var h=c.slice(1);if(h.length===3)h=h.split('').map(function(z){return z+z;}).join('');return h.slice(0,6).toUpperCase();}
+  var m=c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);return m?[m[1],m[2],m[3]].map(function(v){return (+v).toString(16).padStart(2,'0');}).join('').toUpperCase():'76837E';}
+function chartPPTX(cfg,meta){
+  var p=new window.PptxGenJS();p.layout='LAYOUT_WIDE';var s=p.addSlide();
+  s.addText(meta.title,{x:0.5,y:0.3,w:12.3,h:0.55,fontFace:'Arial',fontSize:22,bold:true,color:'0E1A17'});
+  if(meta.note)s.addText(meta.note,{x:0.5,y:0.85,w:12.3,h:0.45,fontFace:'Arial',fontSize:12,color:'76837E'});
+  var labels=(cfg.data.labels||[]).map(String),horiz=cfg.options&&cfg.options.indexAxis==='y',sc=(cfg.options&&cfg.options.scales)||{},vs=sc[horiz?'x':'y']||{},stacked=!!vs.stacked;
+  var cb=vs.ticks&&vs.ticks.callback,pc=false;try{pc=/%$/.test(String(cb(10)));}catch(e){}
+  var g={bar:[],line:[]},col={bar:[],line:[]};
+  (cfg.data.datasets||[]).forEach(function(ds){var t=(ds.type||cfg.type||'bar')==='line'?'line':'bar';
+    g[t].push({name:ds.label||'',labels:labels,values:(ds.data||[]).map(function(v){return v==null?null:Math.round(+v*1000)/1000;})});
+    var c=t==='bar'?ds.backgroundColor:ds.borderColor;col[t].push(hex(Array.isArray(c)?c[c.length-1]:c));});
+  var base={x:0.5,y:1.35,w:12.3,h:5.45,fontFace:'Arial',showLegend:true,legendPos:'b',legendFontSize:12,catAxisLabelFontSize:11,valAxisLabelFontSize:11,
+    valGridLine:{color:'E8EDEB',size:0.5},catGridLine:{style:'none'},valAxisLabelFormatCode:pc?'0"%"':'#,##0.##',displayBlanksAs:'gap'};
+  if(horiz)base.catAxisOrientation='maxMin';
+  var bo={barDir:horiz?'bar':'col',barGrouping:stacked?'stacked':'clustered',chartColors:col.bar,barGapWidthPct:45},lo={chartColors:col.line,lineSize:2,lineDataSymbol:'circle',lineDataSymbolSize:5};
+  if(stacked)bo.overlap=100;
+  if(!stacked&&g.bar.length===1&&labels.length<=12){bo.showValue=true;bo.dataLabelFontSize=10;bo.dataLabelFormatCode=pc?'0.0"%"':'#,##0.0';}
+  if(g.bar.length&&g.line.length)s.addChart([{type:p.ChartType.bar,data:g.bar,options:bo},{type:p.ChartType.line,data:g.line,options:lo}],base);
+  else if(g.bar.length)s.addChart(p.ChartType.bar,g.bar,Object.assign({},base,bo));
+  else s.addChart(p.ChartType.line,g.line,Object.assign({},base,lo));
+  s.addText(footerText(),{x:0.5,y:6.95,w:12.3,h:0.35,fontFace:'Arial',fontSize:9,color:'76837E'});
+  return p;
+}
+function saveBlob(blob,name){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},3000);}
+function saveDataURL(url,name){var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function toast(msg,bad){var t=$('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=msg;t.className=bad?'bad':'';t.hidden=false;clearTimeout(t._h);t._h=setTimeout(function(){t.hidden=true;},bad?6000:3500);}
+function exportChart(id,fmt){
+  var panel=panelOf(id),cap=capture(panel),cfg=cap.cfg[id],meta=cap.meta[id];
+  if(!cfg){toast('This chart could not be exported.',true);return Promise.resolve();}
+  var name='Raast-'+slug(meta.title)+'-'+today();
+  if(fmt==='png'){saveDataURL(chartPNG(prepExport(cfg,meta,{fs:15,title:true,labels:true,footer:true,dpr:2}),1400,788,2),name+'.png');return Promise.resolve();}
+  if(fmt==='svg')return needLib('svg').then(function(){var svg=chartSVG(prepExport(cfg,meta,{fs:15,title:true,labels:true,footer:true,dpr:1}),1400,788);saveBlob(new Blob([svg],{type:'image/svg+xml'}),name+'.svg');});
+  if(fmt==='pptx')return needLib('pptx').then(function(){return chartPPTX(cfg,meta).writeFile({fileName:name+'.pptx'});});
+  return Promise.resolve();
+}
+
+/* ---------- PDF reports ---------- */
+function pdfText(s){return String(s==null?'':s).replace(/▲\s*/g,'+').replace(/▼\s*/g,'-').replace(/→/g,' to ').replace(/[≥]/g,'>=').replace(/[≤]/g,'<=').replace(/−/g,'-').replace(/\s+/g,' ').trim();}
+var PDF_INK=[14,26,23],PDF_MUTED=[118,131,126],PDF_ACCENT=[11,110,79],PDF_LINE=[221,228,225];
+function pdfHeader(doc,title,W,M){
+  doc.setFillColor.apply(doc,PDF_ACCENT);doc.rect(0,0,W,3,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor.apply(doc,PDF_INK);doc.text('Raast Growth Dashboard',M,13);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor.apply(doc,PDF_ACCENT);doc.text(title,M,19);
+  var lm=X.m[X.m.length-1],lq=X.q[X.q.length-1];
+  doc.setFontSize(8);doc.setTextColor.apply(doc,PDF_MUTED);
+  doc.text(['Monthly data to '+mLong(lm.m)+' (provisional)','PSR to '+lq.q+' (revised) · Generated '+today()],W-M,12,{align:'right'});
+  doc.setDrawColor.apply(doc,PDF_LINE);doc.setLineWidth(0.3);doc.line(M,23,W-M,23);
+  return 28;
+}
+function pdfFooters(doc,W,H,M){
+  var n=doc.getNumberOfPages(),lines=doc.splitTextToSize(pdfText(footerText()+' Raast share = Raast / 10 digital channels (ATM excl. cash withdrawals, POS, internet banking, mobile banking, call centre, e-commerce, e-money wallets, BB apps, direct debit, BB agents).'),W-2*M-20);
+  var fy=H-4-lines.length*2.8;for(var i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor.apply(doc,PDF_MUTED);doc.text(lines,M,fy);doc.text(i+' / '+n,W-M,fy,{align:'right'});}
+}
+function kpiData(){return Array.prototype.map.call(document.querySelectorAll('#kpis .kpi'),function(k){
+  return {l:pdfText(k.querySelector('.k-l').textContent).replace(/,? as of (\w{3})\w* (\d{4})/,', $1 $2'),v:pdfText(Array.prototype.map.call(k.querySelector('.k-v').childNodes,function(n){return n.textContent.trim();}).filter(Boolean).join(' ')),s:pdfText(Array.prototype.map.call(k.querySelector('.k-s').childNodes,function(n){return n.textContent.trim();}).filter(Boolean).join(' · ')),lead:k.classList.contains('lead')};});}
+function pdfKpis(doc,y,x0,w,cols,boxH){
+  var k=kpiData(),gap=3,bw=(w-gap*(cols-1))/cols;
+  k.forEach(function(d,i){var r=Math.floor(i/cols),c=i%cols,x=x0+c*(bw+gap),yy=y+r*(boxH+gap);
+    if(d.lead){doc.setFillColor.apply(doc,PDF_ACCENT);doc.roundedRect(x,yy,bw,boxH,1.5,1.5,'F');}else{doc.setDrawColor.apply(doc,PDF_LINE);doc.setFillColor(255,255,255);doc.roundedRect(x,yy,bw,boxH,1.5,1.5,'FD');}
+    var ink=d.lead?[255,255,255]:PDF_INK,mut=d.lead?[220,240,232]:PDF_MUTED;
+    doc.setFont('helvetica','bold');doc.setFontSize(5.8);doc.setTextColor.apply(doc,mut);doc.text(doc.splitTextToSize(d.l.toUpperCase(),bw-4).slice(0,2),x+2,yy+3.6);
+    doc.setFontSize(boxH>18?13:11.5);doc.setTextColor.apply(doc,ink);doc.text(d.v,x+2,yy+(boxH>18?11.5:10.4));
+    doc.setFont('helvetica','normal');doc.setFontSize(5.8);doc.setTextColor.apply(doc,mut);doc.text(doc.splitTextToSize(d.s,bw-4).slice(0,2),x+2,yy+(boxH>18?15.5:13.8));});
+  return y+Math.ceil(k.length/cols)*(boxH+gap);
+}
+function pdfReadings(doc,y,x,w,fs){
+  doc.setFont('helvetica','bold');doc.setFontSize(fs+2);doc.setTextColor.apply(doc,PDF_INK);doc.text('Key readings',x,y);y+=fs*0.55+1.5;
+  Array.prototype.forEach.call(document.querySelectorAll('#readings li'),function(li){
+    var lines=doc.splitTextToSize(pdfText(li.textContent),w-4);doc.setFont('helvetica','normal');doc.setFontSize(fs);doc.setTextColor.apply(doc,[71,84,79]);
+    doc.setFillColor.apply(doc,PDF_ACCENT);doc.rect(x,y-fs*0.3,0.8,lines.length*fs*0.42,'F');doc.text(lines,x+3,y);y+=lines.length*fs*0.42+2.4;});
+  return y;
+}
+function pdfChart(doc,cap,id,x,y,w,pxW,pxH,fs,titleSize){
+  var cfg=cap.cfg[id],meta=cap.meta[id];if(!cfg)return y;
+  doc.setFont('helvetica','bold');doc.setFontSize(titleSize);doc.setTextColor.apply(doc,PDF_INK);doc.text(pdfText(meta.title),x,y);y+=titleSize*0.36;
+  if(meta.note){doc.setFont('helvetica','normal');doc.setFontSize(titleSize-3);doc.setTextColor.apply(doc,PDF_MUTED);var nl=doc.splitTextToSize(pdfText(meta.note),w);doc.text(nl.slice(0,2),x,y+1);y+=Math.min(nl.length,2)*(titleSize-3)*0.38+1.5;}
+  var img=chartPNG(prepExport(cfg,meta,{fs:fs,title:false,labels:true,footer:false,dpr:2.5}),pxW,pxH,2.5),h=w*pxH/pxW;
+  doc.addImage(img,'PNG',x,y,w,h,undefined,'FAST');return y+h+5;
+}
+function pdfTable(doc,tbl,y,M,W,fs){
+  doc.autoTable({html:tbl,startY:y,margin:{left:M,right:M,bottom:18},theme:'grid',styles:{font:'helvetica',fontSize:fs,cellPadding:1.2,textColor:PDF_INK,lineColor:PDF_LINE,lineWidth:0.15,halign:'right'},
+    headStyles:{fillColor:PDF_ACCENT,textColor:255,fontStyle:'bold',halign:'right'},columnStyles:{0:{halign:'left',fontStyle:'bold'}},
+    didParseCell:function(d){d.cell.text=d.cell.text.map(pdfText);if(d.column.index===0)d.cell.styles.halign='left';}});
+  return doc.lastAutoTable.finalY+6;
+}
+function sectionPDF(panel){return needLib('pdf').then(function(){
+  var cap=capture(panel),doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,H=297,M=14,CW=W-2*M,y=pdfHeader(doc,SECTION[panel],W,M),bottom=H-20;
+  function room(h){if(y+h>bottom){doc.addPage();y=pdfHeader(doc,SECTION[panel]+' (continued)',W,M);}}
+  if(panel==='overview'){y=pdfKpis(doc,y,M,CW,4,20)+2;y=pdfReadings(doc,y+3,M,CW,9)+3;}
+  var el=document.querySelector('[data-panel="'+panel+'"]');
+  Array.prototype.forEach.call(el.querySelectorAll('.card'),function(card){
+    if(card.classList.contains('controls'))return;var cv=card.querySelector('canvas'),tb=card.querySelector('table'),title=card.querySelector('h2');
+    if(cv&&cap.cfg[cv.id]){var big=/h3[4-9]0/.test(cv.closest('.chart').className)||cv.id==='cQCh';room(big?110:92);y=pdfChart(doc,cap,cv.id,M,y,CW,1100,big?560:470,15,11);return;}
+    if(tb){room(30);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,PDF_INK);doc.text(pdfText(title?title.textContent:''),M,y);var nt=card.querySelector('.note');y+=4;
+      if(nt&&nt.textContent){doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor.apply(doc,PDF_MUTED);var nl=doc.splitTextToSize(pdfText(nt.textContent),CW);doc.text(nl,M,y);y+=nl.length*3+1;}
+      y=pdfTable(doc,tb,y,M,W,tb.rows[0]&&tb.rows[0].cells.length>8?6.2:8);return;}
+    if(card.querySelector('#pEnds')){room(40);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,PDF_INK);doc.text('Scenario endpoints, '+pdfText($('pEndNote').textContent),M,y);y+=5;
+      Array.prototype.forEach.call(card.querySelectorAll('.end'),function(e){doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor.apply(doc,PDF_INK);doc.text(pdfText(e.querySelector('.end-l').textContent+': '+e.querySelector('.end-v').textContent),M,y);
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor.apply(doc,PDF_MUTED);doc.text(pdfText(e.querySelector('.end-s').textContent),M+70,y);y+=5;});y+=3;return;}
+    if(card.classList.contains('method')){var ps=Array.prototype.map.call(card.querySelectorAll('p'),function(p){return pdfText(p.textContent);});room(20);
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,PDF_INK);doc.text('How the projection works',M,y);y+=5;doc.setFont('helvetica','normal');doc.setFontSize(8.2);doc.setTextColor.apply(doc,[71,84,79]);
+      ps.forEach(function(t){var l=doc.splitTextToSize(t,CW);room(l.length*3.4+2);doc.text(l,M,y);y+=l.length*3.4+2;});}
+  });
+  pdfFooters(doc,W,H,M);doc.save('Raast-dashboard-'+slug(SECTION[panel])+'-'+today()+'.pdf');
+});}
+function onePagerPDF(){return needLib('pdf').then(function(){
+  var std={m:'v',mRange:'12',q:'v',qRange:'fy24',p:'v'};
+  capture('overview');var cM=capture('monthly',std),cQ=capture('quarterly',std);capture('ecosystem');var cP=capture('outlook',std);
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'landscape'}),W=297,H=210,M=11,y=pdfHeader(doc,'One-page summary',W,M);
+  y=pdfKpis(doc,y-1,M,W-2*M,8,17.5)+2;
+  var lw=74,rx=M+lw+6,rw=W-M-rx,cw=(rw-5)/2,top=y;
+  var yy=pdfReadings(doc,top+3,M,lw,8.2);
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor.apply(doc,PDF_INK);doc.text('How to read this',M,yy+3);
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor.apply(doc,PDF_MUTED);
+  doc.text(doc.splitTextToSize('Monthly figures come from SBP monthly Raast reporting and are provisional. Quarterly and annual figures are SBP\'s revised figures from the Payment Systems Review and Annual Review, so totals can differ slightly. The outlook is a base-case projection that tapers the 2-year CAGR towards a long-run rate, capped at a share of digital payments.',lw),M,yy+7);
+  var r1=top,r2;
+  var a=pdfChart(doc,cM,'cMVol',rx,r1+3,cw,620,330,13,9.5),b=pdfChart(doc,cQ,'cQShare',rx+cw+5,r1+3,cw,620,330,13,9.5);r2=Math.max(a,b)+1;
+  pdfChart(doc,cP,'cPProj',rx+cw+5,r2+3,cw,620,330,13,9.5);
+  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor.apply(doc,PDF_INK);doc.text('Payment ecosystem, '+pdfText(($('tEco').rows[0].cells[1]||{}).textContent||'')+' vs a year earlier',rx,r2+3);
+  doc.autoTable({html:'#tEco',startY:r2+5,margin:{left:rx,right:W-(rx+cw)},tableWidth:cw,theme:'plain',styles:{font:'helvetica',fontSize:6.6,cellPadding:0.75,textColor:PDF_INK,halign:'right'},
+    headStyles:{textColor:PDF_MUTED,fontStyle:'bold',fontSize:6,lineWidth:{bottom:0.2},lineColor:PDF_LINE},columnStyles:{0:{halign:'left'}},
+    didParseCell:function(d){d.cell.text=d.cell.text.map(pdfText);if(d.column.index===0)d.cell.styles.halign='left';}});
+  pdfFooters(doc,W,H,M);doc.save('Raast-dashboard-summary-'+today()+'.pdf');
+});}
+
+/* ---------- export controls ---------- */
+var DL_ICON='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function busy(btn,on,label){if(!btn)return;if(on){btn._t=btn.innerHTML;btn.disabled=true;btn.innerHTML=label||'Preparing…';}else{btn.disabled=false;if(btn._t!=null)btn.innerHTML=btn._t;}}
+function addExportControls(){
+  document.querySelectorAll('.card canvas').forEach(function(cv){
+    var card=cv.closest('.card'),h=card.querySelector('.card-h');if(!h||h.querySelector('.xp'))return;
+    var w=document.createElement('div');w.className='xp';
+    w.innerHTML='<button type="button" class="xp-btn" aria-haspopup="true" aria-expanded="false" title="Download this chart">'+DL_ICON+'<span>Download</span></button><div class="xp-menu" role="menu" hidden><button type="button" role="menuitem" data-fmt="png">PNG image<small>High resolution, for slides</small></button><button type="button" role="menuitem" data-fmt="svg">SVG<small>Sharp at any size, editable in PowerPoint</small></button><button type="button" role="menuitem" data-fmt="pptx">PowerPoint chart<small>Editable chart with its data (.pptx)</small></button></div>';
+    h.appendChild(w);
+    var btn=w.querySelector('.xp-btn'),menu=w.querySelector('.xp-menu');
+    btn.addEventListener('click',function(e){e.stopPropagation();var open=menu.hidden;closeMenus();menu.hidden=!open;btn.setAttribute('aria-expanded',String(open));});
+    menu.addEventListener('click',function(e){var b=e.target.closest('[data-fmt]');if(!b)return;closeMenus();busy(btn,true,'Preparing…');
+      exportChart(cv.id,b.dataset.fmt).then(function(){toast('Downloaded.');}).catch(function(err){toast('Download failed: '+(err&&err.message||err)+'. Check your connection and try again.',true);}).then(function(){busy(btn,false);});});
+  });
+  document.addEventListener('click',closeMenus);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenus();});
+  ['overview','monthly','quarterly','ecosystem','outlook'].forEach(function(p){
+    var el=document.querySelector('[data-panel="'+p+'"]');if(!el)return;var bar=el.querySelector('.toolbar');
+    if(!bar){bar=document.createElement('div');bar.className='toolbar panel-actions';el.insertBefore(bar,el.firstChild);}
+    var b=document.createElement('button');b.type='button';b.className='btn ghost pdf-btn';b.innerHTML=DL_ICON+'<span>Section PDF</span>';b.title='Download a PDF report of this section';
+    b.addEventListener('click',function(){busy(b,true,'Building PDF…');sectionPDF(p).then(function(){toast('PDF downloaded.');}).catch(function(err){toast('PDF failed: '+(err&&err.message||err),true);}).then(function(){busy(b,false);});});
+    bar.appendChild(b);});
+  var one=document.createElement('button');one.type='button';one.className='btn primary one-btn';one.id='btnOnePager';one.innerHTML=DL_ICON+'<span>One-page summary</span>';one.title='Download a one-page PDF summary of all sections';
+  one.addEventListener('click',function(){busy(one,true,'Building PDF…');onePagerPDF().then(function(){toast('Summary downloaded.');}).catch(function(err){toast('PDF failed: '+(err&&err.message||err),true);}).then(function(){busy(one,false);});});
+  $('asof').insertAdjacentElement('afterend',one);
+}
+function closeMenus(){document.querySelectorAll('.xp-menu').forEach(function(m){m.hidden=true;});document.querySelectorAll('.xp-btn').forEach(function(b){b.setAttribute('aria-expanded','false');});}
+
 /* ---------- tabs & controls ---------- */
 var RENDER={overview:renderOverview,monthly:renderMonthly,quarterly:renderQuarterly,ecosystem:renderEcosystem,outlook:renderOutlook,data:renderData};
 function show(tab){current=tab;document.querySelectorAll('.tabs button').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===tab));});
   document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.dataset.panel!==tab;});
-  if(!built[tab]){RENDER[tab]();built[tab]=true;}
+  var panel=document.querySelector('[data-panel="'+tab+'"]');
+  if(panel&&!REDUCED){panel.querySelectorAll('.card,.toolbar,.panel-actions').forEach(function(el,i){el.style.setProperty('--i',Math.min(i,10));});panel.classList.remove('enter');void panel.offsetWidth;panel.classList.add('enter');}
+  ANIM_T=0;RENDER[tab]();built[tab]=true;
   try{localStorage.setItem('raast-tab',tab);}catch(e){}
 }
 function refresh(){X=derive(D);renderHeader();built={};$('qSel').innerHTML='';RENDER[current]();built[current]=true;}
@@ -1080,7 +1373,7 @@ function wire(){
 function boot(){
   $('app').innerHTML=document.getElementById('shell-src').textContent;
   if(typeof Chart==='undefined'){$('app').insertAdjacentHTML('afterbegin','<div class="preview-bar">The charting library did not load. Check the connection and reload.</div>');return;}
-  chartDefaults();X=derive(D);renderHeader();wire();
+  chartDefaults();X=derive(D);renderHeader();wire();addExportControls();
   var start='overview';try{var s=localStorage.getItem('raast-tab');if(s&&RENDER[s])start=s;}catch(e){}
   if(/^#(overview|monthly|quarterly|ecosystem|outlook|data)$/.test(location.hash))start=location.hash.slice(1);
   show(start);initCapabilities();
