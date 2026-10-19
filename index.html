@@ -1108,10 +1108,12 @@ function initCapabilities(){
 var XF='Arial, Helvetica, sans-serif';
 var SECTION={overview:'Overview',monthly:'Monthly',quarterly:'Quarterly (PSR)',ecosystem:'Ecosystem',outlook:'Growth & 5-year outlook'};
 var LIBS={pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'],
-  pptx:['https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'],
+  /* each entry may list fallback hosts, tried in order */
+  pptx:[['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js']],
   svg:['https://cdn.jsdelivr.net/npm/canvas2svg@1.0.16/canvas2svg.js']};
 var libReady={};
-function needLib(k){if(!libReady[k])libReady[k]=LIBS[k].reduce(function(p,u){return p.then(function(){return loadScript(u);});},Promise.resolve()).catch(function(e){libReady[k]=null;throw e;});return libReady[k];}
+function loadAny(u){if(typeof u==='string')return loadScript(u);return u.slice(1).reduce(function(p,alt){return p.catch(function(){return loadScript(alt);});},loadScript(u[0]));}
+function needLib(k){if(!libReady[k])libReady[k]=LIBS[k].reduce(function(p,u){return p.then(function(){return loadAny(u);});},Promise.resolve()).catch(function(e){libReady[k]=null;throw e;});return libReady[k];}
 function panelOf(id){var el=$(id);return el&&el.closest('.panel')?el.closest('.panel').dataset.panel:null;}
 function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function slug(s){return String(s).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'chart';}
@@ -1224,7 +1226,7 @@ function exportChart(id,fmt){
   var name='Raast-'+slug(meta.title)+'-'+today();
   if(fmt==='png'){saveDataURL(chartPNG(prepExport(cfg,meta,{fs:15,title:true,labels:true,footer:true,dpr:2}),1400,788,2),name+'.png');return Promise.resolve();}
   if(fmt==='svg')return needLib('svg').then(function(){var svg=chartSVG(prepExport(cfg,meta,{fs:15,title:true,labels:true,footer:true,dpr:1}),1400,788);saveBlob(new Blob([svg],{type:'image/svg+xml'}),name+'.svg');});
-  if(fmt==='pptx')return needLib('pptx').then(function(){return chartPPTX(cfg,meta).writeFile({fileName:name+'.pptx'});});
+  if(fmt==='pptx')return needLib('pptx').then(function(){if(!window.PptxGenJS)throw new Error('PowerPoint library did not start');return chartPPTX(cfg,meta).write({outputType:'blob'});}).then(function(b){saveBlob(b,name+'.pptx');});
   return Promise.resolve();
 }
 
