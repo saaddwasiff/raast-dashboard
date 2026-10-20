@@ -191,6 +191,10 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
 #toast.bad{background:var(--crit)}
 @media (max-width:600px){.xp-btn span,.pdf-btn span{display:none}.xp-menu{min-width:220px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.method .m-lead{color:var(--ink-2);font-size:14px;margin:0 0 14px;max-width:80ch}
+.method .m-h3{font-size:13px;margin:8px 0 8px;color:var(--ink)}
+.method tfoot td{font-size:12px;color:var(--muted);text-align:left;border:0;padding-top:8px}
 </style>
 <div id="app" data-keep></div>
 <script type="text/plain" id="shell-src" data-keep>
@@ -346,12 +350,20 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
     </article>
   </div>
   <article class="card method">
-    <h2>How the projection works</h2>
+    <h2>How this is calculated</h2>
+    <p class="m-lead">The outlook takes the latest full year of actual Raast figures, grows it forward five years, and assumes today's very high growth slows down over time. Every number below follows the controls above.</p>
     <div class="cols">
-      <p><b>Starting point.</b> <span id="mStart"></span></p>
-      <p><b>Base case.</b> Growth falls in a straight line from the selected CAGR to the long-run rate by year five. The digital-payments total is projected the same way from its own CAGR.</p><p><b>Share ceiling.</b> The highest share of digital payments Raast is allowed to reach. If a projected year would push Raast above it, that year is held at the ceiling. It stops the projection implying that Raast replaces cards, wallets and other channels entirely.</p>
-      <p><b>Conservative.</b> The gap between the CAGR and the long-run rate halves every year, so growth slows faster in the early years. The same ceiling applies.</p>
+      <p><b>1. Starting point.</b> <span id="mStart"></span></p>
+      <p><b>2. Recent growth rate.</b> <span id="mCagr"></span></p>
+      <p><b>3. Base case.</b> <span id="mBase"></span></p>
+      <p><b>4. Conservative case.</b> <span id="mCons"></span></p>
+      <p><b>5. Digital payments total.</b> <span id="mDig"></span></p>
+      <p><b>6. Share ceiling.</b> <span id="mCap"></span></p>
+      <p><b>7. Implied share.</b> <span id="mShare"></span></p>
+      <p><b>What it is not.</b> This extends past trends forward with stated assumptions. It does not model drivers such as IDs, merchant onboarding or policy. The long-run rate and the ceiling are judgement calls, not SBP figures, so the sliders let readers test their own view. Because the starting growth comes from Raast's early, fast-growth years, the base case leans optimistic and the conservative case is the more defensible lower bound. POS figures include SoftPOS from Q4 FY25, which slightly raises digital-payments growth.</p>
     </div>
+    <h3 class="m-h3">Year by year</h3>
+    <div class="tablewrap"><table class="tbl" id="tPSteps"></table></div>
   </article>
 </section>
 
@@ -974,8 +986,22 @@ function renderOutlook(){
   var G=growthTable(X);
   $('cagrNote').textContent='Ending '+fy[fy.length-1].label+'. * marks a base year too small for the rate to mean much.';
   $('tCagr').innerHTML='<thead><tr><th>Measure</th><th>'+fy[fy.length-1].label+'</th><th>1-yr</th><th>2-yr</th><th>3-yr</th></tr></thead><tbody>'+G.map(function(r){var isV=!/value/i.test(r.label);return '<tr><td>'+r.label+'</td><td>'+(r.latest==null?'–':isV?fV(r.latest):fP(r.latest))+'</td>'+[1,2,3].map(function(n){var c=r.c[n];return '<td'+(c.small?' class="flag"':'')+'>'+(c.v==null?'–':pct(c.v,0)+(c.small?'*':''))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
-  var L=fy[fy.length-1];
-  $('mStart').textContent=L.label+(L.basis==='estimate'?' is an estimate: '+L.estNote+'. The digital-payments total for '+L.label+' scales the PSR quarters on file by last year\'s seasonality.':' is a complete fiscal year.')+' Earlier years are actual PSR totals'+((D.annual||[]).length?' or SBP annual-review figures where entered':'')+'.';
+  var L=fy[fy.length-1],isV=metric==='v',unit=isV?'transactions':'value',F=function(v){return fM(metric,v);},P1=function(x){return pct(x,1);};
+  var digNow=P.dig0,s0f=P.base0/digNow;
+  $('mStart').textContent=L.label+' Raast '+unit+' of '+F(P.base0)+' against '+F(digNow)+' across the 10 digital channels, a share of '+P1(s0f)+'. '+(L.basis==='estimate'?L.label+' is an estimate: '+L.estNote+'.':(L.basis==='sbp-annual'?'Both are SBP Annual Review totals.':L.label+' is a complete fiscal year of PSR data.'));
+  $('mCagr').textContent='Compound annual growth rate (CAGR) = (end ÷ start)^(1 ÷ years) − 1. Over the selected '+P.window+'-year window, '+P.baseLabel+' to '+P.from+': ('+F(P.base0)+' ÷ '+F(fy[fy.length-1-P.window][rk])+')^(1/'+P.window+') − 1 = '+P1(P.g0)+' a year. The window sets the starting rate: 1 year gives '+pct(G.filter(function(r){return r.label===(isV?'Raast volume':'Raast value');})[0].c[1].v,0)+', 3 years gives '+(function(c){return c.v==null?'n/a':pct(c.v,0);})(G.filter(function(r){return r.label===(isV?'Raast volume':'Raast value');})[0].c[3])+'.';
+  var gb=function(k){return P.g0+(P.gL-P.g0)*k/5;},gc=function(k){return P.gL+(P.g0-P.gL)*Math.pow(0.5,k);},gdk=function(k){return P.gd!=null?P.gd+(P.gL-P.gd)*k/5:P.gL;};
+  $('mBase').textContent='Growth falls in a straight line from '+P1(P.g0)+' to the long-run rate of '+pct(P.gL,0)+' by year five: growth in year k = '+P1(P.g0)+' + ('+pct(P.gL,0)+' − '+P1(P.g0)+') × k ÷ 5. That gives '+[1,2,3,4,5].map(function(k){return P1(gb(k));}).join(', ')+', reaching '+F(P.base[4])+' in '+P.years[4]+'.';
+  $('mCons').textContent='The gap between current growth and '+pct(P.gL,0)+' halves every year: growth in year k = '+pct(P.gL,0)+' + ('+P1(P.g0)+' − '+pct(P.gL,0)+') × 0.5^k. That gives '+[1,2,3,4,5].map(function(k){return P1(gc(k));}).join(', ')+', reaching '+F(P.cons[4])+' in '+P.years[4]+'. Both cases end near the same growth rate; the gap comes from how fast growth slows early on.';
+  $('mDig').textContent='Projected like the base case from its own '+P.window+'-year CAGR of '+(P.gd==null?'n/a':P1(P.gd))+', falling to '+pct(P.gL,0)+' by year five. It reaches '+F(P.dig[4])+' in '+P.years[4]+'. This is the denominator for the share chart.';
+  var capYrs=P.years.filter(function(y,i){return P.capped[i];});
+  $('mCap').textContent='Raast is not allowed above '+pct(P.cap,0)+' of projected digital payments; a year that would cross it is held at the ceiling. '+(capYrs.length?'With these settings the base case hits the ceiling from '+capYrs[0]+'.':'With these settings neither case reaches it.');
+  $('mShare').textContent='Projected Raast ÷ projected digital payments. Base case: '+P1(s0f)+' in '+P.from+' to '+P1(P.shareBase[4])+' in '+P.years[4]+'. Conservative: '+P1(shCons[4])+' in '+P.years[4]+'.';
+  var prev=[P.base0].concat(P.base),prevC=[P.base0].concat(P.cons);
+  $('tPSteps').innerHTML='<thead><tr><th>Year</th><th>Base growth</th><th>Base case</th><th>Conservative growth</th><th>Conservative</th><th>Digital payments</th><th>Base share</th><th>Conservative share</th></tr></thead><tbody>'+
+    '<tr><td>'+P.from+' (actual)</td><td>–</td><td>'+F(P.base0)+'</td><td>–</td><td>'+F(P.base0)+'</td><td>'+F(digNow)+'</td><td>'+P1(s0f)+'</td><td>'+P1(s0f)+'</td></tr>'+
+    P.years.map(function(y,i){return '<tr><td>'+y+'</td><td>'+P1(P.base[i]/prev[i]-1)+(P.capped[i]?'*':'')+'</td><td>'+F(P.base[i])+'</td><td>'+P1(P.cons[i]/prevC[i]-1)+'</td><td>'+F(P.cons[i])+'</td><td>'+F(P.dig[i])+'</td><td'+(P.capped[i]?' class="flag"':'')+'>'+P1(P.shareBase[i])+'</td><td>'+P1(shCons[i])+'</td></tr>';}).join('')+'</tbody>'+
+    (capYrs.length?'<tfoot><tr><td colspan="8">* Held at the '+pct(P.cap,0)+' share ceiling, so growth is lower than the formula rate.</td></tr></tfoot>':'');
 }
 function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v)));var m=v/p;var n=m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10;return n*p;}
 
@@ -1287,6 +1313,10 @@ function sectionPDF(panel){return needLib('pdf').then(function(){
   Array.prototype.forEach.call(el.querySelectorAll('.card'),function(card){
     if(card.classList.contains('controls'))return;var cv=card.querySelector('canvas'),tb=card.querySelector('table'),title=card.querySelector('h2');
     if(cv&&cap.cfg[cv.id]){var big=/h3[4-9]0/.test(cv.closest('.chart').className)||cv.id==='cQCh';room(big?110:92);y=pdfChart(doc,cap,cv.id,M,y,CW,1100,big?560:470,15,11);return;}
+    if(card.classList.contains('method')){var ps=Array.prototype.map.call(card.querySelectorAll('p'),function(p){return pdfText(p.textContent);});room(20);
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,PDF_INK);doc.text('How this is calculated',M,y);y+=5;
+      ps.forEach(function(t){doc.setFont('helvetica','normal');doc.setFontSize(8.2);doc.setTextColor.apply(doc,[71,84,79]);var l=doc.splitTextToSize(t,CW);room(l.length*3.4+2);doc.text(l,M,y);y+=l.length*3.4+2;});
+      if(tb){room(40);y=pdfTable(doc,tb,y+1,M,W,7.5);}return;}
     if(tb){room(30);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor.apply(doc,PDF_INK);doc.text(pdfText(title?title.textContent:''),M,y);var nt=card.querySelector('.note');y+=4;
       if(nt&&nt.textContent){doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor.apply(doc,PDF_MUTED);var nl=doc.splitTextToSize(pdfText(nt.textContent),CW);doc.text(nl,M,y);y+=nl.length*3+1;}
       y=pdfTable(doc,tb,y,M,W,tb.rows[0]&&tb.rows[0].cells.length>8?6.2:8);return;}
