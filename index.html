@@ -195,6 +195,8 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
 .method .m-lead{color:var(--ink-2);font-size:14px;margin:0 0 14px;max-width:80ch}
 .method .m-h3{font-size:13px;margin:8px 0 8px;color:var(--ink)}
 .method tfoot td{font-size:12px;color:var(--muted);text-align:left;border:0;padding-top:8px}
+
+.p-method{margin:10px 0 0}
 </style>
 <div id="app" data-keep></div>
 <script type="text/plain" id="shell-src" data-keep>
@@ -215,10 +217,8 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
     <button role="tab" id="tab-quarterly" data-tab="quarterly" aria-selected="false">Quarterly (PSR)</button>
     <button role="tab" id="tab-ecosystem" data-tab="ecosystem" aria-selected="false">Ecosystem</button>
     <button role="tab" id="tab-outlook" data-tab="outlook" aria-selected="false">Growth &amp; 5-yr outlook</button>
-    <button role="tab" id="tab-data" data-tab="data" aria-selected="false">Data &amp; update</button>
   </nav>
 </header>
-<div class="preview-bar" id="previewBar" hidden>Previewing unpublished data on this screen only. <button class="linkbtn" id="previewExit" type="button">Return to published data</button></div>
 
 <main class="wrap">
 
@@ -332,6 +332,7 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
       <div class="card-h"><div><h2 id="pTitle">Five-year trajectory</h2><p class="note" id="pNote"></p></div></div>
       <div class="chart h360"><canvas id="cPProj"></canvas></div>
       <div class="legend" id="lgPProj"></div>
+      <p class="note p-method" id="pMethod"></p>
     </article>
     <article class="card">
       <div class="card-h"><div><h2>Scenario endpoints</h2><p class="note" id="pEndNote"></p></div></div>
@@ -349,253 +350,12 @@ input[type=range]{width:200px;max-width:100%;accent-color:var(--accent)}
       <div class="tablewrap"><table class="tbl" id="tCagr"></table></div>
     </article>
   </div>
-  <article class="card method">
-    <h2>How this is calculated</h2>
-    <p class="m-lead">The outlook takes the latest full year of actual Raast figures, grows it forward five years, and assumes today's very high growth slows down over time. Every number below follows the controls above.</p>
-    <div class="cols">
-      <p><b>1. Starting point.</b> <span id="mStart"></span></p>
-      <p><b>2. Recent growth rate.</b> <span id="mCagr"></span></p>
-      <p><b>3. Base case.</b> <span id="mBase"></span></p>
-      <p><b>4. Conservative case.</b> <span id="mCons"></span></p>
-      <p><b>5. Digital payments total.</b> <span id="mDig"></span></p>
-      <p><b>6. Share ceiling.</b> <span id="mCap"></span></p>
-      <p><b>7. Implied share.</b> <span id="mShare"></span></p>
-      <p><b>What it is not.</b> This extends past trends forward with stated assumptions. It does not model drivers such as IDs, merchant onboarding or policy. The long-run rate and the ceiling are judgement calls, not SBP figures, so the sliders let readers test their own view. Because the starting growth comes from Raast's early, fast-growth years, the base case leans optimistic and the conservative case is the more defensible lower bound. POS figures include SoftPOS from Q4 FY25, which slightly raises digital-payments growth.</p>
-    </div>
-    <h3 class="m-h3">Year by year</h3>
-    <div class="tablewrap"><table class="tbl" id="tPSteps"></table></div>
-  </article>
 </section>
-
-<section class="panel" id="p-data" data-panel="data" hidden>
-  <div class="grid g-2">
-    <article class="card">
-      <div class="card-h"><div><h2>Monthly update</h2><p class="note" id="upRole"></p></div></div>
-      <ol class="steps">
-        <li>Load SBP's monthly Raast workbook as received.</li>
-        <li>When SBP publishes a new Payment Systems Review, load the PDF as it is. The dashboard reads its annexure tables (Raast, retail payments by channel, ATM cash withdrawals, infrastructure and users) and adds the new quarter, applying SBP's revisions to earlier quarters.</li>
-        <li>Upload both files to the <b>data/inbox</b> folder of the GitHub repository. The website reads them and updates itself within a few minutes. To check files first without changing anything, load them below and click Check files.</li>
-      </ol>
-      <div class="upl">
-        <label class="file" for="upMonthly"><span class="file-t">SBP monthly Raast workbook</span><span class="file-n" id="upMonthlyN">No file chosen</span><input type="file" id="upMonthly" accept=".xlsx,.xls"></label>
-        <label class="file" for="upPsr"><span class="file-t">Payment Systems Review (PDF)</span><span class="file-n" id="upPsrN">No file chosen · one or more PSR PDFs, or the PSR template .xlsx</span><input type="file" id="upPsr" accept=".pdf,.xlsx,.xls" multiple></label>
-      </div>
-      <div class="btnrow">
-        <button type="button" class="btn" id="btnCheck" disabled>Check files</button>
-        <button type="button" class="btn ghost" id="btnPreview" disabled>Preview here</button>
-        <button type="button" class="btn primary" id="btnPublish" disabled hidden>Publish for everyone</button>
-        <button type="button" class="btn primary" id="btnDownload" disabled hidden>Download updated index.html</button>
-      </div>
-      <div id="upResult" class="upres" aria-live="polite"></div>
-    </article>
-    <article class="card">
-      <div class="card-h"><div><h2>Data checks on the loaded data</h2><p class="note">Flags for figures to confirm with SBP before circulating</p></div></div>
-      <ul class="checks" id="checks"></ul>
-    </article>
-  </div>
-  <article class="card">
-    <div class="card-h"><div><h2>Sources and method</h2></div></div>
-    <div class="cols src" id="sources"></div>
-  </article>
-</section>
-
 </main>
 <footer class="foot"><span id="footSrc"></span></footer>
 </script>
 <script type="application/json" id="raast-data" data-keep>{"meta": {"updated": "2026-10-12", "monthlyFile": "Raast- Monthly SBP Reporting - Last updated Aug 2026.xlsx", "psrFile": "PS-Review-Q3FY26.pdf, PSR Q4FY26 and SBP Annual Review FY26"}, "monthly": [{"m": "2025-02", "p2p_v": 116.112, "p2p_val": 2516, "ids": 42.603982, "banks": 35, "p2m_v": 2.255774, "p2m_val": 5.132379942, "merchants": 0.805755, "msps": 9, "csps": 22, "bulk_v": 0.406776, "bulk_val": 124.9, "bulk_inst": 22, "tot_v": 118.77455, "tot_val": 2646.032379942}, {"m": "2025-03", "p2p_v": 142.764, "p2p_val": 3123, "ids": 43.450177, "banks": 36, "p2m_v": 2.411477, "p2m_val": 6.006043335, "merchants": 0.841607, "msps": 9, "csps": 22, "bulk_v": 0.515981, "bulk_val": 193.01, "bulk_inst": 23, "tot_v": 145.691458, "tot_val": 3322.016043335}, {"m": "2025-04", "p2p_v": 124.776, "p2p_val": 2701, "ids": 43.978838, "banks": 36, "p2m_v": 2.318258, "p2m_val": 5.464286983, "merchants": 0.879027, "msps": 9, "csps": 22, "bulk_v": 0.537579, "bulk_val": 272.403, "bulk_inst": 23, "tot_v": 127.631837, "tot_val": 2978.867286983}, {"m": "2025-05", "p2p_v": 145.763511, "p2p_val": 3199.283358734, "ids": 44.484008, "banks": 38, "p2m_v": 2.59398, "p2m_val": 6.183415165, "merchants": 0.924056, "msps": 12, "csps": 24, "bulk_v": 0.663431, "bulk_val": 356.468962253, "bulk_inst": 23, "tot_v": 149.020922, "tot_val": 3561.935736152}, {"m": "2025-06", "p2p_v": 137.481802, "p2p_val": 2998.8191822, "ids": 44.972096, "banks": 38, "p2m_v": 2.513837, "p2m_val": 6.709106848, "merchants": 0.96184, "msps": 14, "csps": 24, "bulk_v": 0.756836, "bulk_val": 456.539196566, "bulk_inst": 23, "tot_v": 140.752475, "tot_val": 3462.067485614}, {"m": "2025-07", "p2p_v": 163.889351, "p2p_val": 3534.647939416, "ids": 45.515466, "banks": 38, "p2m_v": 2.804602, "p2m_val": 8.285407123, "merchants": 1.008961, "msps": 15, "csps": 24, "bulk_v": 0.824799, "bulk_val": 364.920811426, "bulk_inst": 24, "tot_v": 167.518752, "tot_val": 3907.854157965}, {"m": "2025-08", "p2p_v": 185.155638, "p2p_val": 3787.754335306, "ids": 46.010233, "banks": 38, "p2m_v": 3.220183, "p2m_val": 9.849742828, "merchants": 1.072879, "msps": 16, "csps": 24, "bulk_v": 1.84401, "bulk_val": 498.604854114, "bulk_inst": 24, "tot_v": 190.219831, "tot_val": 4296.208932248}, {"m": "2025-09", "p2p_v": 185.680408, "p2p_val": 3957.5557296, "ids": 46.558866, "banks": 39, "p2m_v": 4.56376, "p2m_val": 17.948961842, "merchants": 1.156642, "msps": 17, "csps": 25, "bulk_v": 2.223085, "bulk_val": 588.612671369, "bulk_inst": 24, "tot_v": 192.467253, "tot_val": 4564.117362811}, {"m": "2025-10", "p2p_v": 200.52472, "p2p_val": 4998.716272829, "ids": 47.15455, "banks": 39, "p2m_v": 5.345685, "p2m_val": 25.473120921, "merchants": 1.725454, "msps": 17, "csps": 25, "bulk_v": 2.915444, "bulk_val": 772.051292076, "bulk_inst": 24, "tot_v": 208.785849, "tot_val": 5796.240685826}, {"m": "2025-11", "p2p_v": 190.074784, "p2p_val": 4973.143594399, "ids": 47.697847, "banks": 40, "p2m_v": 12.589533, "p2m_val": 60.306162486, "merchants": 1.939195, "msps": 19, "csps": 25, "bulk_v": 2.70796, "bulk_val": 728.227058251, "bulk_inst": 26, "tot_v": 205.372277, "tot_val": 5761.676815136}, {"m": "2025-12", "p2p_v": 212.350844, "p2p_val": 5714.936433524, "ids": 48.31021, "banks": 41, "p2m_v": 15.631117, "p2m_val": 81.846907551, "merchants": 2.102195, "msps": 19, "csps": 25, "bulk_v": 3.531214, "bulk_val": 1143.421551582, "bulk_inst": 26, "tot_v": 231.513175, "tot_val": 6940.204892657}, {"m": "2026-01", "p2p_v": 220.135981, "p2p_val": 6227.576467291, "ids": 48.938711, "banks": 43, "p2m_v": 17.41813, "p2m_val": 95.936321049, "merchants": 2.258934, "msps": 21, "csps": 25, "bulk_v": 3.312389, "bulk_val": 944.695953543, "bulk_inst": 26, "tot_v": 240.8665, "tot_val": 7268.208741883}, {"m": "2026-02", "p2p_v": 206.90256, "p2p_val": 5966.757259838, "ids": 49.717552, "banks": 43, "p2m_v": 19.245688, "p2m_val": 114.97242445183001, "merchants": 2.258934, "msps": 23, "csps": 25, "bulk_v": 3.259171, "bulk_val": 814.925400341, "bulk_inst": 33, "tot_v": 229.407419, "tot_val": 6896.65508463083}, {"m": "2026-03", "p2p_v": 237.396044, "p2p_val": 6689.806882482, "ids": 48.989262, "banks": 44, "p2m_v": 21.963965, "p2m_val": 127.425154575, "merchants": 2.630211, "msps": 23, "csps": 25, "bulk_v": 3.502713, "bulk_val": 848.977290624, "bulk_inst": 34, "tot_v": 262.862722, "tot_val": 7666.209327681}, {"m": "2026-04", "p2p_v": 229.60774, "p2p_val": 7235.609846916, "ids": 49.360159, "banks": 44, "p2m_v": 23.550907, "p2m_val": 129.58059057, "merchants": 2.927495, "msps": 24, "csps": 25, "bulk_v": 3.397655, "bulk_val": 1049.085057506, "bulk_inst": 35, "tot_v": 256.556302, "tot_val": 8414.275494992}, {"m": "2026-05", "p2p_v": 260.892407, "p2p_val": 7560.203444292, "ids": 48.882161, "banks": 44, "p2m_v": 29.576536, "p2m_val": 171.494520929, "merchants": 3.244959, "msps": 24, "csps": 25, "bulk_v": 3.628786, "bulk_val": 930.929553305, "bulk_inst": 37, "tot_v": 294.097729, "tot_val": 8662.627518526}, {"m": "2026-06", "p2p_v": 244.63119, "p2p_val": 8251.5761657, "ids": 49.216245, "banks": 45, "p2m_v": 31.234996, "p2m_val": 171.423951913, "merchants": 3.633701, "msps": 30, "csps": 25, "bulk_v": 3.860075, "bulk_val": 1419.505369288, "bulk_inst": 37, "tot_v": 279.726261, "tot_val": 9842.505486901}, {"m": "2026-07", "p2p_v": 271.889371, "p2p_val": 8946.670150551, "ids": 49.993299, "banks": 45, "p2m_v": 36.612083, "p2m_val": 200.732407782, "merchants": 3.864537, "msps": 34, "csps": 27, "bulk_v": 3.590607, "bulk_val": 1141.68279524, "bulk_inst": 52, "tot_v": 312.092061, "tot_val": 10289.085353573}, {"m": "2026-08", "p2p_v": 285.859128, "p2p_val": 8482.400602921, "ids": 50.783748, "banks": 45, "p2m_v": 42.774373, "p2m_val": 231.235617366, "merchants": 4.155634, "msps": 34, "csps": 27, "bulk_v": 3.742758, "bulk_val": 1096.144335659, "bulk_inst": 54, "tot_v": 332.376259, "tot_val": 9809.780555946}], "cumulative": {"label": "31st Aug 2026", "vol": 5353.619082, "val": 144610.33696285982, "ids": 50.783748, "merchants": 4.155634}, "quarterly": [{"q": "Q1 FY22", "end": "Sep-21", "p2p_v": 0, "p2p_val": 0, "bulk_v": 0.0128, "bulk_val": 2.5, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "PSR Q1FY23"}, {"q": "Q2 FY22", "end": "Dec-21", "p2p_v": 0, "p2p_val": 0, "bulk_v": 0.0514, "bulk_val": 5.7, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "PSR Q1FY23"}, {"q": "Q3 FY22", "end": "Mar-22", "p2p_v": 0.7644, "p2p_val": 8.5, "bulk_v": 0.0096, "bulk_val": 2.2, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "PSR Q1FY23"}, {"q": "Q4 FY22", "end": "Jun-22", "p2p_v": 7.091, "p2p_val": 93.6, "bulk_v": 0.0196, "bulk_val": 4.8, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "PSR Q1FY23"}, {"q": "Q1 FY23", "end": "Sep-22", "p2p_v": 11.7687, "p2p_val": 228.9, "bulk_v": 0.0192, "bulk_val": 5.2, "p2m_v": null, "p2m_val": null, "ids": 21.1, "merchants": null, "src": "PSR Q3FY23"}, {"q": "Q2 FY23", "end": "Dec-22", "p2p_v": 21.3963, "p2p_val": 561, "bulk_v": 0.085, "bulk_val": 17.6, "p2m_v": null, "p2m_val": null, "ids": 25.8, "merchants": null, "src": "PSR Q3FY23"}, {"q": "Q3 FY23", "end": "Mar-23", "p2p_v": 41.1517, "p2p_val": 872.8, "bulk_v": 0.1249, "bulk_val": 29.9, "p2m_v": null, "p2m_val": null, "ids": 29.2, "merchants": null, "src": "PSR Q3FY23"}, {"q": "Q4 FY23", "end": "Jun-23", "p2p_v": 72.5, "p2p_val": 1324, "bulk_v": 0.2, "bulk_val": 35, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "PSR Q3FY24"}, {"q": "Q1 FY24", "end": "Sep-23", "p2p_v": 81, "p2p_val": 1710, "bulk_v": 0.2, "bulk_val": 41.4, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "Raast vs eTransactions (SBP-PSD)"}, {"q": "Q2 FY24", "end": "Dec-23", "p2p_v": 106.8, "p2p_val": 2257.3, "bulk_v": 0.3, "bulk_val": 63.2, "p2m_v": null, "p2m_val": null, "ids": null, "merchants": null, "src": "Raast vs eTransactions (SBP-PSD)"}, {"q": "Q3 FY24", "end": "Mar-24", "p2p_v": 139.8, "p2p_val": 3365.3, "bulk_v": 0.5, "bulk_val": 71.6, "p2m_v": 0, "p2m_val": 0.1, "ids": 36, "merchants": null, "src": "Raast vs eTransactions (SBP-PSD)"}, {"q": "Q4 FY24", "end": "Jun-24", "p2p_v": 166.8, "p2p_val": 3945.7, "bulk_v": 0.6, "bulk_val": 103.7, "p2m_v": 0.1, "p2m_val": 0.2, "ids": null, "merchants": null, "src": "Raast vs eTransactions (SBP-PSD)"}, {"q": "Q1 FY25", "end": "Sep-24", "p2p_v": 196.1, "p2p_val": 4649.5, "bulk_v": 0.6, "bulk_val": 100.5, "p2m_v": 0.3, "p2m_val": 0.9, "ids": 39.5, "merchants": null, "src": "PSR Q1FY26"}, {"q": "Q2 FY25", "end": "Dec-24", "p2p_v": 293.7, "p2p_val": 6137.3, "bulk_v": 1.1, "bulk_val": 224.1, "p2m_v": 0.9, "p2m_val": 2.9, "ids": null, "merchants": null, "src": "PSR Q2FY26"}, {"q": "Q3 FY25", "end": "Mar-25", "p2p_v": 368.3, "p2p_val": 8014.5, "bulk_v": 1.4, "bulk_val": 437.7, "p2m_v": 1.5, "p2m_val": 4.5, "ids": null, "merchants": null, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q4 FY25", "end": "Jun-25", "p2p_v": 408, "p2p_val": 8899.9, "bulk_v": 2, "bulk_val": 1085.9, "p2m_v": 2.2, "p2m_val": 6.5, "ids": 44.97, "merchants": 0.96, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q1 FY26", "end": "Sep-25", "p2p_v": 534.7, "p2p_val": 11280, "bulk_v": 4.9, "bulk_val": 1452.1, "p2m_v": 4.3, "p2m_val": 17, "ids": 46.56, "merchants": 1.16, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q2 FY26", "end": "Dec-25", "p2p_v": 603, "p2p_val": 15686.8, "bulk_v": 9.2, "bulk_val": 2614.8, "p2m_v": 36.3, "p2m_val": 177.2, "ids": 48.3, "merchants": 2.1, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q3 FY26", "end": "Mar-26", "p2p_v": 664.4, "p2p_val": 18884.2, "bulk_v": 19.4, "bulk_val": 3707, "p2m_v": 55.9, "p2m_val": 319.6, "ids": 49.5, "merchants": 2.6, "src": "PSR Q3FY26 (PDF); Bulk from SBP Annual Review FY26"}, {"q": "Q4 FY26", "end": "Jun-26", "p2p_v": 735.1, "p2p_val": 23047.3, "bulk_v": 10.9, "bulk_val": 3397.3, "p2m_v": 86, "p2m_val": 480.6, "ids": 49.2, "merchants": 3.6, "src": "PSR Q4FY26"}], "channels": [{"q": "Q1 FY24", "atm_v": 214.1, "atm_val": 3289.8, "atm_cw_v": 208.5, "atm_cw_val": 2953.7, "pos_v": 59, "pos_val": 321.9, "ib_v": 49.8, "ib_val": 4666.1, "mb_v": 217.4, "mb_val": 8644.9, "call_v": 0.04, "call_val": 1.98, "ecom_v": 9.6, "ecom_val": 39.6, "ewallet_v": 15.4, "ewallet_val": 37, "bbwallet_v": 568.1, "bbwallet_val": 1757.6, "dd_v": 0.58, "dd_val": 4706.7, "bbagent_v": 109.8, "bbagent_val": 833.9, "branch_v": 141.8, "branch_val": 112866.5}, {"q": "Q2 FY24", "atm_v": 235, "atm_val": 3709.2, "atm_cw_v": 229.2, "atm_cw_val": 3368.1, "pos_v": 65.1, "pos_val": 371.4, "ib_v": 57.1, "ib_val": 5369.3, "mb_v": 279.9, "mb_val": 11226.2, "call_v": 0.04, "call_val": 1.9, "ecom_v": 10.9, "ecom_val": 50.5, "ewallet_v": 20.1, "ewallet_val": 50.8, "bbwallet_v": 624.4, "bbwallet_val": 1997.7, "dd_v": 0.6, "dd_val": 4969.2, "bbagent_v": 114.3, "bbagent_val": 818.1, "branch_v": 147.6, "branch_val": 114577.4}, {"q": "Q3 FY24", "atm_v": 236.5, "atm_val": 3886.5, "atm_cw_v": 230.5, "atm_cw_val": 3518.2, "pos_v": 70.6, "pos_val": 393.9, "ib_v": 58.6, "ib_val": 6434.2, "mb_v": 301.5, "mb_val": 12955.3, "call_v": 0.16, "call_val": 1.95, "ecom_v": 9.5, "ecom_val": 52.1, "ewallet_v": 22.9, "ewallet_val": 62.1, "bbwallet_v": 681.9, "bbwallet_val": 2288.1, "dd_v": 0.58, "dd_val": 4376.4, "bbagent_v": 114.2, "bbagent_val": 832.3, "branch_v": 143.1, "branch_val": 100277.4}, {"q": "Q4 FY24", "atm_v": 245.1, "atm_val": 4027.1, "atm_cw_v": 239.4, "atm_cw_val": 3680.1, "pos_v": 76.7, "pos_val": 415.1, "ib_v": 57.6, "ib_val": 7015.9, "mb_v": 324, "mb_val": 13518, "call_v": 0.03, "call_val": 2.01, "ecom_v": 9.9, "ecom_val": 52.1, "ewallet_v": 26.8, "ewallet_val": 76.5, "bbwallet_v": 822.8, "bbwallet_val": 2805.4, "dd_v": 0.59, "dd_val": 5311.4, "bbagent_v": 107, "bbagent_val": 770.7, "branch_v": 137, "branch_val": 102662.7}, {"q": "Q1 FY25", "atm_v": 243.4, "atm_val": 3892.4, "atm_cw_v": 237.5, "atm_cw_val": 3531.5, "pos_v": 82.7, "pos_val": 426.8, "ib_v": 65.9, "ib_val": 7851.7, "mb_v": 367.5, "mb_val": 15854.2, "call_v": 0.04, "call_val": 1.99, "ecom_v": 10.9, "ecom_val": 52.4, "ewallet_v": 32.4, "ewallet_val": 93.3, "bbwallet_v": 893.8, "bbwallet_val": 3003.1, "dd_v": 0.56, "dd_val": 5706.7, "bbagent_v": 109.2, "bbagent_val": 841.6, "branch_v": 141.5, "branch_val": 99504.7}, {"q": "Q2 FY25", "atm_v": 259.2, "atm_val": 4257.3, "atm_cw_v": 253, "atm_cw_val": 3872.8, "pos_v": 88.6, "pos_val": 509.6, "ib_v": 75, "ib_val": 10052.2, "mb_v": 431.5, "mb_val": 18990.6, "call_v": 0.03, "call_val": 1.62, "ecom_v": 12.8, "ecom_val": 61.5, "ewallet_v": 38.5, "ewallet_val": 105.5, "bbwallet_v": 992.6, "bbwallet_val": 3394.5, "dd_v": 0.57, "dd_val": 6572.9, "bbagent_v": 116.2, "bbagent_val": 885.1, "branch_v": 148.1, "branch_val": 107763}, {"q": "Q3 FY25", "atm_v": 272, "atm_val": 4749.9, "atm_cw_v": 265.3, "atm_cw_val": 4318.2, "pos_v": 98.9, "pos_val": 549.9, "ib_v": 79.9, "ib_val": 10117.3, "mb_v": 502.8, "mb_val": 23300.6, "call_v": 0.02, "call_val": 1.39, "ecom_v": 13.5, "ecom_val": 67.8, "ewallet_v": 43.8, "ewallet_val": 130, "bbwallet_v": 1149.9, "bbwallet_val": 3998.8, "dd_v": 0.57, "dd_val": 5722.5, "bbagent_v": 155.9, "bbagent_val": 989.8, "branch_v": 144.1, "branch_val": 115749.1, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q4 FY25", "atm_v": 264.9, "atm_val": 4528.5, "atm_cw_v": 258.8, "atm_cw_val": 4113.9, "pos_v": 107.5, "pos_val": 568.4, "ib_v": 76.4, "ib_val": 11211.5, "mb_v": 505.4, "mb_val": 23980.3, "call_v": 0.02, "call_val": 1.38, "ecom_v": 14.6, "ecom_val": 68, "ewallet_v": 50.4, "ewallet_val": 142.5, "bbwallet_v": 1203.8, "bbwallet_val": 3770.4, "dd_v": 0.5, "dd_val": 5257.4, "bbagent_v": 152.3, "bbagent_val": 1065.2, "branch_v": 133.7, "branch_val": 106115.4, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q1 FY26", "atm_v": 267.4, "atm_val": 4505.8, "atm_cw_v": 260.8, "atm_cw_val": 4091.4, "pos_v": 123.3, "pos_val": 624.1, "ib_v": 76.1, "ib_val": 11257.9, "mb_v": 589.8, "mb_val": 29090.4, "call_v": 0.03, "call_val": 1.95, "ecom_v": 14.6, "ecom_val": 68.3, "ewallet_v": 61.1, "ewallet_val": 176.4, "bbwallet_v": 1731.3, "bbwallet_val": 5585.2, "dd_v": 0.52, "dd_val": 5038.3, "bbagent_v": 128.6, "bbagent_val": 917.3, "branch_v": 136.6, "branch_val": 99274.8, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q2 FY26", "atm_v": 282.9, "atm_val": 4999.6, "atm_cw_v": 276.1, "atm_cw_val": 4557.4, "pos_v": 136.3, "pos_val": 749.7, "ib_v": 84.5, "ib_val": 13687.5, "mb_v": 620.7, "mb_val": 33017, "call_v": 0.02, "call_val": 1.83, "ecom_v": 15.9, "ecom_val": 77.7, "ewallet_v": 68.2, "ewallet_val": 194.6, "bbwallet_v": 1900.8, "bbwallet_val": 6658.7, "dd_v": 0.57, "dd_val": 4994.9, "bbagent_v": 134.6, "bbagent_val": 879.7, "branch_v": 137.7, "branch_val": 101895.4, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q3 FY26", "atm_v": 277.5, "atm_val": 5193.1, "atm_cw_v": 270.7, "atm_cw_val": 4716.3, "pos_v": 143.2, "pos_val": 798, "ib_v": 88.4, "ib_val": 16317.4, "mb_v": 665, "mb_val": 33590.8, "call_v": 0.04, "call_val": 1.8, "ecom_v": 16.4, "ecom_val": 80.1, "ewallet_v": 59.4, "ewallet_val": 183, "bbwallet_v": 2164.1, "bbwallet_val": 7897.8, "dd_v": 0.55, "dd_val": 4217.1, "bbagent_v": 154.7, "bbagent_val": 1100.4, "branch_v": 127.9, "branch_val": 99464.2, "src": "PSR Q3FY26 (PDF)"}, {"q": "Q4 FY26", "atm_v": 271.9, "atm_val": 4986.1, "atm_cw_v": 265.5, "atm_cw_val": 4541, "pos_v": 161.5, "pos_val": 885.3, "ib_v": 89, "ib_val": 17833.9, "mb_v": 753.1, "mb_val": 37674.1, "call_v": 0.01, "call_val": 1.3, "ecom_v": 17.9, "ecom_val": 89.4, "ewallet_v": 63.8, "ewallet_val": 187.9, "bbwallet_v": 2507.2, "bbwallet_val": 9061.9, "dd_v": 0.5, "dd_val": 3948.9, "bbagent_v": 161.6, "bbagent_val": 835.8, "branch_v": 123.3, "branch_val": 111314.2, "src": "PSR Q4FY26"}], "eco": [{"q": "Q1 FY24", "qr": null, "mb": 15.08, "ib": 10.29, "bbapp": 52.44, "emi": 2.38, "cards": 53.97, "pos": 118444, "atms": 18117}, {"q": "Q2 FY24", "qr": null, "mb": 16.3, "ib": 10.84, "bbapp": 56.24, "emi": 2.74, "cards": 55.76, "pos": 121789, "atms": 18441}, {"q": "Q3 FY24", "qr": null, "mb": 17.04, "ib": 11.44, "bbapp": 59.51, "emi": 3.2, "cards": 57, "pos": 120641, "atms": 18655}, {"q": "Q4 FY24", "qr": 516317, "mb": 18.68, "ib": 12, "bbapp": 58.68, "emi": 3.67, "cards": 54.61, "pos": 125593, "atms": 18957}, {"q": "Q1 FY25", "qr": 597411, "mb": 19.58, "ib": 12.41, "bbapp": 60.32, "emi": 4.21, "cards": 55.63, "pos": 132224, "atms": 19170}, {"q": "Q2 FY25", "qr": 679745, "mb": 21.1, "ib": 13.26, "bbapp": 64.3, "emi": 4.74, "cards": 55.7, "pos": 151646, "atms": 19519}, {"q": "Q3 FY25", "qr": 778936, "mb": 22.59, "ib": 14.13, "bbapp": 68.48, "emi": 5.28, "cards": 58.09, "pos": 179383, "atms": 19851}, {"q": "Q4 FY25", "qr": 1092044, "mb": 24.13, "ib": 14.92, "bbapp": 79.16, "emi": 5.75, "cards": 59.71, "pos": 227388, "atms": 20250, "posSoft": true, "src": "SBP Annual Review FY26 (POS incl. SoftPOS)"}, {"q": "Q1 FY26", "qr": 1409993, "mb": 25.87, "ib": 15.16, "bbapp": 87.12, "emi": 6.29, "cards": 61.11, "pos": 261246, "atms": 20527, "posSoft": true, "src": "SBP Annual Review FY26 (POS incl. SoftPOS)"}, {"q": "Q2 FY26", "qr": 1944747, "mb": 27.18, "ib": 15.68, "bbapp": 92.25, "emi": 6.81, "cards": 64.1, "pos": 298253, "atms": 20976, "posSoft": true, "src": "SBP Annual Review FY26 (POS incl. SoftPOS)"}, {"q": "Q3 FY26", "qr": 2506772, "mb": 28.9, "ib": 16.18, "bbapp": 95.85, "emi": 7.29, "cards": 68.25, "pos": 321860, "atms": 21377, "posSoft": true, "src": "SBP Annual Review FY26 (POS incl. SoftPOS)"}, {"q": "Q4 FY26", "qr": 3836522, "mb": 30.43, "ib": 17.52, "bbapp": 99.1, "emi": 7.87, "cards": 69.93, "pos": 337791, "atms": 21678, "posSoft": true, "src": "SBP Annual Review FY26 (POS incl. SoftPOS)"}], "annual": [{"fy": "FY24", "raast_v": 496.1, "raast_val": 11558.6, "dig_v": 4910.620000000002, "dig_val": 104620.74, "note": ""}, {"fy": "FY25", "raast_v": 1276, "raast_val": 29564.1, "dig_v": 7499.910000000002, "dig_val": 166940.18000000002, "note": ""}, {"fy": "FY26", "raast_v": 2755.2, "raast_val": 80050.8, "dig_v": 12761.340000000004, "dig_val": 249550.57999999993, "note": ""}], "warnings": [{"lvl": "warn", "msg": "P2M merchant count for 2026-02 is identical to 2026-01 (2.258934 Mn). Possibly a carried-over value."}, {"lvl": "warn", "msg": "Raast IDs fall from 49.72 Mn (2026-02) to 48.99 Mn (2026-03). Check with SBP whether IDs were cleaned up or mis-keyed."}, {"lvl": "warn", "msg": "Raast IDs fall from 49.36 Mn (2026-04) to 48.88 Mn (2026-05). Check with SBP whether IDs were cleaned up or mis-keyed."}]}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" data-keep></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" data-keep></script>
-<script id="parse-src" data-keep>
-/* Raast dashboard parsers: SBP monthly Raast workbook + Raast PSR template. Needs global XLSX. */
-function rdNum(v){ if(v===null||v===undefined||v==='') return null; if(typeof v==='number') return isFinite(v)?v:null; var s=String(v).replace(/,/g,'').trim(); if(/^(na|n\/a|-|–)$/i.test(s)) return null; var n=parseFloat(s); return isFinite(n)?n:null; }
-function rdMonthKey(v){
-  if(typeof v==='number' && v>20000 && v<80000){ var d=XLSX.SSF.parse_date_code(v); return d.y+'-'+String(d.m).padStart(2,'0'); }
-  if(v instanceof Date) return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0');
-  return null;
-}
-function rdRows(ws){ return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:false}); }
-function rdFindSheet(wb,re){ var n=wb.SheetNames.find(function(s){return re.test(s);}); return n?wb.Sheets[n]:null; }
-
-function parseMonthly(wb){
-  var warn=[], months={};
-  function useCase(re,key){
-    var ws=rdFindSheet(wb,re); if(!ws){ warn.push({lvl:'error',msg:'Sheet for '+key.toUpperCase()+' not found in the monthly file.'}); return; }
-    var rows=rdRows(ws), h=-1;
-    for(var i=0;i<rows.length;i++){ if((rows[i]||[]).some(function(c){return typeof c==='string'&&/volume of successful/i.test(c);})){h=i;break;} }
-    if(h<0){ warn.push({lvl:'error',msg:key.toUpperCase()+' sheet: header row with "Volume of Successful…" not found.'}); return; }
-    var hdr=rows[h].map(function(c){return c==null?'':String(c);});
-    function col(re){ return hdr.findIndex(function(c){return re.test(c);}); }
-    var cV=col(/volume of successful/i), cVal=col(/value of successful/i), cIds=col(/raast ids/i), cM=col(/raast merchants/i), cMsp=col(/msps/i), cCsp=col(/csps/i), cPart=col(/participating/i), cElig=col(/eligible/i);
-    var cD=-1;
-    for(var r=h+1;r<rows.length && cD<0;r++){ (rows[r]||[]).some(function(c,j){ if(rdMonthKey(c)){cD=j;return true;} return false; }); }
-    for(r=h+1;r<rows.length;r++){
-      var row=rows[r]||[], k=rdMonthKey(row[cD]), v=rdNum(row[cV]);
-      if(!k||v===null) continue;
-      var m=months[k]||(months[k]={m:k});
-      m[key+'_v']=v; m[key+'_val']=rdNum(row[cVal]);
-      if(key==='p2p'){ m.ids=rdNum(row[cIds]); m.banks=rdNum(row[cPart]); if(m.banks==null&&cElig>=0) m.banks=rdNum(row[cElig]); }
-      if(key==='p2m'){ m.merchants=rdNum(row[cM]); m.msps=rdNum(row[cMsp]); m.csps=rdNum(row[cCsp]); }
-      if(key==='bulk'){ m.bulk_inst=rdNum(row[cPart]); }
-    }
-  }
-  useCase(/p2p/i,'p2p'); useCase(/p2m/i,'p2m'); useCase(/bulk/i,'bulk');
-  var cum=null, ws=rdFindSheet(wb,/cumul/i);
-  if(ws){
-    rdRows(ws).forEach(function(row){
-      var j=row.findIndex(function(c){return rdMonthKey(c)||(typeof c==='string'&&/launch till/i.test(c));}); if(j<0) return;
-      var k=rdMonthKey(row[j]), tv=rdNum(row[j+1]), tval=rdNum(row[j+2]);
-      if(k && tv!==null && tv>1e6){ var m=months[k]||(months[k]={m:k}); m.tot_v=tv/1e6; m.tot_val=tval!==null?tval/1e9:null; }
-      if(!k && tv!==null && (!cum||tv/1e6>cum.vol+1e-9)){
-        var asOf=(row[j].match(/(\d{1,2}\w{0,2}\s+[A-Za-z]+\s+\d{4})/)||[])[1]||'';
-        var ids=rdNum(row[j+3]), mer=rdNum(row[j+4]);
-        cum={label:asOf, vol:tv/1e6, val:tval/1e9, ids:ids!=null?ids/1e6:null, merchants:mer!=null?mer/1e6:null};
-      }
-    });
-  } else warn.push({lvl:'warn',msg:'Cumulative Data sheet not found; all-use-case totals and launch-to-date figures unavailable.'});
-  var list=Object.keys(months).sort().map(function(k){return months[k];}).filter(function(m){return m.p2p_v!=null||m.tot_v!=null;});
-  list.forEach(function(m,i){
-    if(m.bulk_v==null && m.tot_v!=null && m.p2p_v!=null){
-      m.bulk_v=Math.max(0,m.tot_v-m.p2p_v-(m.p2m_v||0)); m.bulk_val=(m.tot_val!=null&&m.p2p_val!=null)?Math.max(0,m.tot_val-m.p2p_val-(m.p2m_val||0)):null; m.bulk_derived=true;
-    }
-    if(m.tot_v==null && m.p2p_v!=null){ m.tot_v=m.p2p_v+(m.p2m_v||0)+(m.bulk_v||0); m.tot_val=(m.p2p_val||0)+(m.p2m_val||0)+(m.bulk_val||0); }
-    var p=list[i-1];
-    if(p){
-      if(p.ids!=null&&m.ids!=null&&m.ids<p.ids) warn.push({lvl:'warn',msg:'Raast IDs fall from '+p.ids.toFixed(2)+' Mn ('+p.m+') to '+m.ids.toFixed(2)+' Mn ('+m.m+'). Check with SBP whether IDs were cleaned up or mis-keyed.'});
-      if(p.merchants!=null&&m.merchants!=null&&m.merchants===p.merchants) warn.push({lvl:'warn',msg:'P2M merchant count for '+m.m+' is identical to '+p.m+' ('+m.merchants+' Mn). Possibly a carried-over value.'});
-      var pd=new Date(p.m+'-01'), md=new Date(m.m+'-01'); if((md.getFullYear()-pd.getFullYear())*12+md.getMonth()-pd.getMonth()!==1) warn.push({lvl:'warn',msg:'Gap in monthly series between '+p.m+' and '+m.m+'.'});
-    }
-  });
-  var der=list.filter(function(m){return m.bulk_derived;}).map(function(m){return m.m;});
-  if(der.length) warn.push({lvl:'info',msg:'Bulk sheet has no rows for '+der[0]+' to '+der[der.length-1]+'. Bulk for those months is derived as all-use-case total minus P2P and P2M.'});
-  return {monthly:list, cumulative:cum, warnings:warn};
-}
-
-var PSR_QRE=/^Q([1-4])\s*FY\s*-?\s*(\d{2})$/i;
-function rdTable(wb,re,first){
-  var ws=rdFindSheet(wb,re); if(!ws) return null;
-  var rows=rdRows(ws), h=rows.findIndex(function(r){return r&&typeof r[0]==='string'&&r[0].trim().toLowerCase()===first;});
-  if(h<0) return null;
-  var out=[]; for(var i=h+1;i<rows.length;i++){ var r=rows[i]; if(!r||r[0]==null||String(r[0]).trim()==='') continue; out.push(r); } return out;
-}
-function rdQ(s,warn,sheet){ var t=String(s).trim().replace(/\s+/g,' '), mm=t.match(PSR_QRE); if(!mm){warn.push({lvl:'error',msg:sheet+': quarter label "'+t+'" not recognised (use "Q1 FY26").'});return null;} return 'Q'+mm[1]+' FY'+mm[2]; }
-function parsePSR(wb){
-  var warn=[], quarterly=[], channels=[], eco=[], annual=[];
-  var R=rdTable(wb,/raast_?q/i,'quarter');
-  if(!R) warn.push({lvl:'error',msg:'Raast_Quarterly sheet (header "Quarter" in column A) not found.'});
-  (R||[]).forEach(function(r){ var q=rdQ(r[0],warn,'Raast_Quarterly'); if(!q) return;
-    quarterly.push({q:q,end:r[1]?String(r[1]):'',p2p_v:rdNum(r[2]),p2p_val:rdNum(r[3]),bulk_v:rdNum(r[4]),bulk_val:rdNum(r[5]),p2m_v:rdNum(r[6]),p2m_val:rdNum(r[7]),ids:rdNum(r[8]),merchants:rdNum(r[9]),src:r[10]?String(r[10]):''}); });
-  var keys=['atm','atm_cw','pos','ib','mb','call','ecom','ewallet','bbwallet','dd','bbagent','branch'];
-  var C=rdTable(wb,/channel/i,'quarter');
-  if(!C) warn.push({lvl:'error',msg:'Channels_Quarterly sheet not found.'});
-  (C||[]).forEach(function(r){ var q=rdQ(r[0],warn,'Channels_Quarterly'); if(!q) return; var o={q:q};
-    keys.forEach(function(k,i){ o[k+'_v']=rdNum(r[1+i*2]); o[k+'_val']=rdNum(r[2+i*2]); });
-    var miss=keys.filter(function(k){return k!=='branch'&&(o[k+'_v']==null||o[k+'_val']==null);});
-    if(miss.length) warn.push({lvl:'warn',msg:q+': missing channel values ('+miss.join(', ')+'). Raast share for this quarter will be understated.'});
-    channels.push(o); });
-  var E=rdTable(wb,/eco/i,'quarter');
-  (E||[]).forEach(function(r){ var q=rdQ(r[0],warn,'Ecosystem_Quarterly'); if(!q) return;
-    eco.push({q:q,qr:rdNum(r[1]),mb:rdNum(r[2]),ib:rdNum(r[3]),bbapp:rdNum(r[4]),emi:rdNum(r[5]),cards:rdNum(r[6]),pos:rdNum(r[7]),atms:rdNum(r[8])}); });
-  var A=rdTable(wb,/annual/i,'fiscal year');
-  (A||[]).forEach(function(r){ var f=String(r[0]).trim().toUpperCase().replace(/\s/g,''); if(!/^FY\d{2}$/.test(f)) return;
-    var o={fy:f,raast_v:rdNum(r[1]),raast_val:rdNum(r[2]),dig_v:rdNum(r[3]),dig_val:rdNum(r[4]),note:r[5]?String(r[5]):''};
-    if(o.raast_v!=null||o.raast_val!=null||o.dig_v!=null||o.dig_val!=null) annual.push(o); });
-  function qi(q){var m=q.match(/Q(\d) FY(\d+)/);return +m[2]*4+(+m[1]);}
-  [quarterly,channels,eco].forEach(function(a){a.sort(function(x,y){return qi(x.q)-qi(y.q);});});
-  return {quarterly:quarterly,channels:channels,eco:eco,annual:annual,warnings:warn};
-}
-if(typeof module!=='undefined') module.exports={parseMonthly:parseMonthly,parsePSR:parsePSR};
-</script>
-<script id="pdfparse-src" data-keep>
-/* Raast dashboard: read SBP Payment Systems Review (quarterly) PDFs. Needs a pdfjsLib object. */
-function psrLines(pdfjs, buf){
-  return pdfjs.getDocument({data:buf, isEvalSupported:false}).promise.then(function(doc){
-    var pages=[]; for(var i=1;i<=doc.numPages;i++) pages.push(i);
-    return Promise.all(pages.map(function(n){return doc.getPage(n).then(function(p){return p.getTextContent();}).then(function(tc){
-      var rows=[];
-      tc.items.forEach(function(it){ if(!it.str||!it.str.trim()) return; var y=it.transform[5], x=it.transform[4], fs=Math.abs(it.transform[0])||8;
-        var r=rows.find(function(r){return Math.abs(r.y-y)<2.5;}); if(!r){r={y:y,items:[]};rows.push(r);} r.items.push({x:x,w:it.width||0,fs:fs,s:it.str}); });
-      rows.sort(function(a,b){return b.y-a.y;});
-      return rows.map(function(r){ var its=r.items.sort(function(a,b){return a.x-b.x;}), out='', prev=null;
-        its.forEach(function(i){ var gap=prev?i.x-(prev.x+prev.w):99;
-          /* glyph runs split inside a word or number sit almost flush; real column gaps are wide */
-          out+= (prev && gap < prev.fs*0.18 && !/\s$/.test(prev.s) && !/^\s/.test(i.s)) ? i.s : (out?' ':'')+i.s; prev=i; });
-        return out.replace(/\s+/g,' ').replace(/([A-Za-z0-9])\s*-\s*(?=[A-Za-z])/g,'$1-').replace(/\b([A-Za-z])\s*-\s*(?=\d)/g,'$1-').replace(/\s*\/\s*/g,'/').replace(/\s+:/g,':').trim(); });
-    });}));
-  }).then(function(perPage){return [].concat.apply([],perPage);});
-}
-var PSR_Q=/Q\s*([1-4])\s*-\s*F\s*Y\s*-?\s*(\d)\s*(\d)/gi;
-function psrNums(line){ var m=line.match(/(?:^|\s)-?\d[\d,]*\.?\d*(?=\s|$)/g)||[]; return m.map(function(s){return parseFloat(s.replace(/,/g,'').trim());}); }
-function psrSection(lines, headRe){
-  var start=lines.findIndex(function(l){return headRe.test(l)&&!/\.{4,}/.test(l);}); if(start<0) return null;
-  var end=lines.length; for(var i=start+1;i<lines.length;i++){ if(/^A-\d+\s*:/.test(lines[i])&&!/\.{4,}/.test(lines[i])){end=i;break;} }
-  var sec=lines.slice(start,end), qs=null;
-  for(var j=0;j<sec.length&&!qs;j++){ var mm=[],m; PSR_Q.lastIndex=0; while((m=PSR_Q.exec(sec[j]))) mm.push('Q'+m[1]+' FY'+m[2]+m[3]); if(mm.length>=3) qs=mm.filter(function(q,k){return mm.indexOf(q)===k;}); }
-  return {lines:sec, quarters:qs};
-}
-function psrSplit(line){ var t=line.split(' '), i=t.findIndex(function(x){return /^-?[\d,]+\.?\d*$/.test(x)&&/\d/.test(x);}); if(i<0) return {key:line.replace(/\s+/g,'').toLowerCase(),nums:[]};
-  return {key:t.slice(0,i).join('').toLowerCase(), nums:t.slice(i).filter(function(x){return /^-?[\d,]+\.?\d*$/.test(x);}).map(function(x){return parseFloat(x.replace(/,/g,''));})}; }
-function psrRow(sec, re, n){ for(var i=0;i<sec.lines.length;i++){ var p=psrSplit(sec.lines[i]); if(re.test(p.key)&&p.nums.length>=n) return p.nums.slice(-n); } return null; }
-function parsePSRText(lines){
-  var warn=[], out={quarterly:{},channels:{},eco:{}};
-  /* Raast */
-  var R=psrSection(lines,/^A-\d+\s*:\s*Raast/i);
-  if(!R||!R.quarters) warn.push({lvl:'error',msg:'PDF: Raast annexure table not found.'});
-  else { var nq=R.quarters.length, rows={p2p:/^p2p/,bulk:/^bulk/,p2m:/^p2m/};
-    Object.keys(rows).forEach(function(k){ var v=psrRow(R,rows[k],nq*2); if(!v){ if(k!=='p2m') warn.push({lvl:'warn',msg:'PDF: Raast '+k.toUpperCase()+' row not read.'}); return; }
-      R.quarters.forEach(function(q,i){ var o=out.quarterly[q]||(out.quarterly[q]={q:q}); o[k+'_v']=v[i*2]; o[k+'_val']=v[i*2+1]; }); }); }
-  /* Retail payments by channel */
-  var C=psrSection(lines,/^A-\d+\s*:\s*Retail Value Payments/i);
-  var chRe=[['atm',/^atm/],['pos',/^pos/],['ib',/^internetbanking/],['mb',/^mobile(phone)?banking/],['call',/^callcent/],['ecom',/^e-?commerce/],['bbwallet',/^(bbwallet|branchless\/digitalbankingapps)/],['ewallet',/^e-?(money)?wallet/],['dd',/^directdebit/],['bbagent',/^(bbagent|bankingagents?)/],['branch',/^bankbranch/]];
-  if(!C||!C.quarters) warn.push({lvl:'error',msg:'PDF: Retail Value Payments (A-4) table not found.'});
-  else chRe.forEach(function(p){ var v=psrRow(C,p[1],C.quarters.length*2); if(!v){warn.push({lvl:'error',msg:'PDF: channel row "'+p[0]+'" not read from A-4.'});return;}
-    C.quarters.forEach(function(q,i){ var o=out.channels[q]||(out.channels[q]={q:q}); o[p[0]+'_v']=v[i*2]; o[p[0]+'_val']=v[i*2+1]; }); });
-  /* ATM cash withdrawals */
-  var A=psrSection(lines,/^A-\d+\s*:\s*ATM/i);
-  var cw=A&&A.quarters?psrRow(A,/^cashwithdrawals/,A.quarters.length*2):null;
-  if(!cw) warn.push({lvl:'error',msg:'PDF: ATM cash withdrawals (A-5) not read; ATM cannot be netted.'});
-  else A.quarters.forEach(function(q,i){ var o=out.channels[q]||(out.channels[q]={q:q}); o.atm_cw_v=cw[i*2]; o.atm_cw_val=cw[i*2+1]; });
-  /* Infrastructure and users */
-  var I=psrSection(lines,/^A-\d+\s*:\s*Payment Systems Infrastructure/i);
-  if(!I||!I.quarters) warn.push({lvl:'warn',msg:'PDF: Infrastructure table (A-1) not found; ecosystem figures not updated.'});
-  else { var n=I.quarters.length, ecoRe=[['qr',/^qr-?enabledmerchants/,1],['mb',/^mobilephonebankingusers/,1e6],['ib',/^internetbankingusers/,1e6],['bbapp',/^branchlessbankingmobileappusers/,1e6],['emi',/^emi-?wallet/,1e6],['cards',/^paymentcards$/,1e6],['pos',/^posmachines/,1],['atms',/^atms$/,1]];
-    ecoRe.forEach(function(p){ var v=psrRow(I,p[1],n); if(!v) return; I.quarters.forEach(function(q,i){ var o=out.eco[q]||(out.eco[q]={q:q}); o[p[0]]=p[2]===1?v[i]:Math.round(v[i]/p[2]*100)/100; }); }); }
-  var qs=Object.keys(out.channels).concat(Object.keys(out.quarterly));
-  var latest=qs.sort(function(a,b){return qIndexP(a)-qIndexP(b);}).pop()||null;
-  return {quarterly:out.quarterly,channels:out.channels,eco:out.eco,latest:latest,warnings:warn};
-}
-function qIndexP(q){var m=q.match(/Q(\d) FY(\d+)/);return +m[2]*4+(+m[1]);}
-/* Merge PDF results into the dashboard data. A quarter is only replaced by an issue at least as recent
-   as the issue its current figures came from, so loading an old PSR never undoes later revisions. */
-var PSR_NAMES={atm:'ATM/CDM',atm_cw:'ATM cash withdrawals',pos:'POS',ib:'Internet Banking',mb:'Mobile Banking Apps',call:'Call Center/IVR',ecom:'E-Commerce',ewallet:'E-Money Wallets',bbwallet:'BB/Digital Banking Apps',dd:'Direct Debit',bbagent:'BB Agents',branch:'Bank Branches'};
-function srcIdx(s){ s=String(s||''); var best=0, m, re=/Q\s*([1-4])\s*-?\s*FY\s*-?\s*(\d{2})/gi;
-  while((m=re.exec(s))) best=Math.max(best,+m[2]*4+(+m[1]));
-  /* an SBP Annual Review for FYxx is published after that year's Q4 issue */
-  var a=s.match(/annual review\s*FY\s*(\d{2})/i); if(a) best=Math.max(best,+a[1]*4+4.5);
-  return best; }
-function mergePSR(D, P, srcLabel){
-  var END={1:'Sep-',2:'Dec-',3:'Mar-',4:'Jun-'}, changed=[], skipped=[], issue=qIndexP(P.latest);
-  function endOf(q){var m=q.match(/Q(\d) FY(\d+)/);var y=+m[2];return END[m[1]]+String(+m[1]<=2?y-1:y).padStart(2,'0');}
-  function existingIdx(q){ var r=D.quarterly.find(function(x){return x.q===q;}), c=D.channels.find(function(x){return x.q===q;});
-    return Math.max(r?srcIdx(r.src):0, c?srcIdx(c.src):0); }
-  var qs={}; Object.keys(P.quarterly).concat(Object.keys(P.channels),Object.keys(P.eco)).forEach(function(q){qs[q]=1;});
-  Object.keys(qs).forEach(function(q){
-    if(existingIdx(q)>issue){ skipped.push(q); return; }
-    if(P.quarterly[q]){ var r=D.quarterly.find(function(x){return x.q===q;}); if(!r){r={q:q,end:endOf(q),ids:null,merchants:null};D.quarterly.push(r);}
-      ['p2p','bulk','p2m'].forEach(function(k){ var v=P.quarterly[q][k+'_v']; if(v==null) return;
-        if(r[k+'_v']!=null&&Math.abs(r[k+'_v']-v)>0.05) changed.push(q+' Raast '+k.toUpperCase()+' volume '+r[k+'_v']+' → '+v+' Mn');
-        r[k+'_v']=v; r[k+'_val']=P.quarterly[q][k+'_val']; }); r.src=srcLabel; }
-    if(P.channels[q]){ var c=D.channels.find(function(x){return x.q===q;}); if(!c){c={q:q};D.channels.push(c);}
-      ['atm','atm_cw','pos','ib','mb','call','ecom','ewallet','bbwallet','dd','bbagent','branch'].forEach(function(k){ var v=P.channels[q][k+'_v']; if(v==null) return;
-        if(c[k+'_v']!=null&&Math.abs(c[k+'_v']-v)>0.05) changed.push(q+' '+(PSR_NAMES[k]||k)+' volume '+c[k+'_v']+' → '+v+' Mn'); });
-      Object.assign(c,P.channels[q]); c.src=srcLabel; }
-    if(P.eco[q]){ var e=D.eco.find(function(x){return x.q===q;}); if(!e){e={q:q};D.eco.push(e);}
-      if(srcIdx(e.src)>issue){ skipped.push(q+' (ecosystem)'); } else Object.keys(P.eco[q]).forEach(function(k){ if(P.eco[q][k]!=null) e[k]=P.eco[q][k]; }); }
-  });
-  [D.quarterly,D.channels,D.eco].forEach(function(a){a.sort(function(x,y){return qIndexP(x.q)-qIndexP(y.q);});});
-  return {changed:changed, skipped:skipped};
-}
-if(typeof module!=='undefined') module.exports={psrLines:psrLines,parsePSRText:parsePSRText,mergePSR:mergePSR};
-</script>
 <script id="compute-src" data-keep>
 /* Raast dashboard: derived metrics, CAGR and projections. Pure functions on the data object. */
 var DIG_KEYS=['pos','ib','mb','call','ecom','ewallet','bbwallet','dd','bbagent'];
@@ -719,7 +479,7 @@ if(typeof module!=='undefined') module.exports={derive:derive,growthTable:growth
 (function(){
 'use strict';
 var PUBLISHED=JSON.parse(document.getElementById('raast-data').textContent);
-var D=PUBLISHED, X=null, staged=null, previewing=false;
+var D=PUBLISHED, X=null;
 var REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var charts={}, built={}, current='overview', CAPTURE=null, NOANIM=false, ANIM_SEQ=0, ANIM_T=0;
 var st={ov:'v',m:'v',mRange:'12',q:'v',qRange:'fy24',p:'v',win:2,longRun:0.25,cap:0.75,qSel:null};
@@ -749,6 +509,32 @@ function chartDefaults(){var t=T();Chart.defaults.font.family='"Instrument Sans"
   Chart.defaults.plugins.legend.display=false;Chart.defaults.transitions.resize={animation:{duration:0}};
   var tp=Chart.defaults.plugins.tooltip;tp.backgroundColor=t.ink;tp.titleColor=t.surface;tp.bodyColor=t.surface;tp.padding=10;tp.cornerRadius=6;tp.boxPadding=4;tp.usePointStyle=true;tp.titleFont={weight:'600'};tp.animation=false;tp.caretSize=6;Chart.defaults.transitions.active={animation:{duration:0}};Chart.defaults.hover={mode:'index',intersect:false};}
 function legend(id,items){if(CAPTURE)return;var el=$(id);if(!el)return;el.innerHTML=items.map(function(i){return '<span><i class="sw '+(i.kind||'')+'" style="'+(i.kind?'border-color:':'background:')+i.c+'"></i>'+esc(i.t)+'</span>';}).join('');}
+/* ---------- hover focus: hovered bar stays full colour, the rest fade; lines fade after the hovered point ---------- */
+var DIM=0.22;
+function dimC(c,f){if(typeof c!=='string')return c;var r,g,b,a=1,m;
+  if(c[0]==='#'){var h=c.slice(1);if(h.length===3)h=h.split('').map(function(x){return x+x;}).join('');if(h.length===8){a=parseInt(h.slice(6),16)/255;h=h.slice(0,6);}var n=parseInt(h,16);r=n>>16&255;g=n>>8&255;b=n&255;}
+  else if((m=c.match(/rgba?\(([^)]+)\)/))){var q=m[1].split(',').map(parseFloat);r=q[0];g=q[1];b=q[2];a=q.length>3?q[3]:1;}else return c;
+  return 'rgba('+r+','+g+','+b+','+(a*f).toFixed(3)+')';}
+function optAt(v,ctx){return typeof v==='function'?v(ctx):Array.isArray(v)?v[ctx.dataIndex]:v;}
+function addFocus(cfg,ref){
+  var foc=function(){return ref.ch?ref.ch.$focus:null;};
+  /* in bar+line charts bars follow the line rule (fade only after the hovered point) */
+  var combo=(cfg.data.datasets||[]).some(function(d){return (d.type||cfg.type)==='line';});
+  (cfg.data.datasets||[]).forEach(function(ds){var t=ds.type||cfg.type||'bar';
+    if(t==='bar'){['backgroundColor','borderColor'].forEach(function(k){var o=ds[k];if(o===undefined)return;
+        ds[k]=function(ctx){var v=optAt(o,ctx),f=foc();return f!=null&&ctx.type==='data'&&(combo?ctx.dataIndex>f:ctx.dataIndex!==f)?dimC(v,DIM):v;};});return;}
+    var bc=ds.borderColor,bg=ds.backgroundColor,seg=ds.segment||{},sb=seg.borderColor,sf=seg.backgroundColor;
+    var after=function(ctx){var f=foc();return f!=null&&ctx.p1DataIndex>f;};
+    ds.segment=Object.assign({},seg,{
+      borderColor:function(ctx){var v=sb?sb(ctx):undefined;return after(ctx)?dimC(v!==undefined?v:bc,DIM):v;},
+      backgroundColor:function(ctx){var v=sf?sf(ctx):undefined;return after(ctx)?dimC(v!==undefined?v:bg,DIM):v;}});
+    ['pointBackgroundColor','pointBorderColor'].forEach(function(k){var o=ds[k]!==undefined?ds[k]:(k==='pointBackgroundColor'?bg:bc);
+      ds[k]=function(ctx){var v=optAt(o,ctx),f=foc();return f!=null&&ctx.dataIndex>f?dimC(v,DIM):v;};});
+  });
+}
+var FOCUS_PL={id:'rdFocus',afterEvent:function(ch,args){var e=args.event,f=null;
+  if(e.type!=='mouseout'&&args.inChartArea){var el=ch.getElementsAtEventForMode(e,'index',{intersect:false,axis:ch.options.indexAxis==='y'?'y':'x'},false);if(el.length)f=el[0].index;}
+  if(f!==(ch.$focus==null?null:ch.$focus)){ch.$focus=f;ch.update('none');}}};
 function mk(id,cfg){
   if(CAPTURE){CAPTURE.cfg[id]=cfg;var card=$(id)&&$(id).closest('.card');CAPTURE.meta[id]={title:card&&card.querySelector('h2')?card.querySelector('h2').textContent:'',note:card&&card.querySelector('.note')?card.querySelector('.note').textContent:''};return null;}
   if(charts[id])charts[id].destroy();var c=$(id);if(!c)return null;
@@ -761,7 +547,8 @@ function mk(id,cfg){
     var n=(cfg.data.labels||[]).length;
     (cfg.data.datasets||[]).forEach(function(ds){if((ds.type||cfg.type)==='line'&&!ds.animations)ds.animations=progressive(n,base);});
   }
-  var ch=new Chart(c.getContext('2d'),cfg);charts[id]=ch;
+  var ref={};addFocus(cfg,ref);cfg.plugins=(cfg.plugins||[]).concat([FOCUS_PL]);
+  var ch=new Chart(c.getContext('2d'),cfg);ref.ch=ch;charts[id]=ch;
   return ch;}
 function axisY(t,fmt,extra){return Object.assign({beginAtZero:true,grid:{color:t.grid},border:{display:false},ticks:{callback:fmt,maxTicksLimit:6}},extra||{});}
 function axisX(t,extra){return Object.assign({grid:{display:false},border:{color:t.line},ticks:{maxRotation:0,autoSkipPadding:10}},extra||{});}
@@ -775,7 +562,7 @@ function progressive(n,base){if(REDUCED||NOANIM||CAPTURE)return false;base=base|
 function renderHeader(){
   var lm=X.m[X.m.length-1], lq=X.q[X.q.length-1];
   $('asof').innerHTML='<span class="chip">Monthly <b>'+(lm?mLong(lm.m):'–')+'</b> · provisional</span><span class="chip">PSR <b>'+(lq?lq.q:'–')+'</b></span><span class="chip">Updated <b>'+esc(D.meta.updated||'')+'</b></span>';
-  $('footSrc').textContent='Sources: '+(D.meta.monthlyFile||'SBP monthly Raast reporting')+' · '+(D.meta.psrFile||'SBP Payment Systems Review')+'. Monthly figures are provisional (SBP monthly reporting); quarterly and annual figures are SBP\'s revised figures. Fiscal years run July–June.';
+  $('footSrc').textContent='Sources: SBP monthly Raast reporting to '+mLong(X.m[X.m.length-1].m)+' (provisional); SBP Payment Systems Review and Annual Review to '+X.q[X.q.length-1].q+' (revised). Raast share = Raast ÷ 10 digital channels (ATM excluding cash withdrawals, POS, internet banking, mobile banking, call centre, e-commerce, e-money wallets, BB apps, direct debit, BB agents). Fiscal years run July–June.';
 }
 
 /* ---------- number count-up ---------- */
@@ -986,149 +773,12 @@ function renderOutlook(){
   var G=growthTable(X);
   $('cagrNote').textContent='Ending '+fy[fy.length-1].label+'. * marks a base year too small for the rate to mean much.';
   $('tCagr').innerHTML='<thead><tr><th>Measure</th><th>'+fy[fy.length-1].label+'</th><th>1-yr</th><th>2-yr</th><th>3-yr</th></tr></thead><tbody>'+G.map(function(r){var isV=!/value/i.test(r.label);return '<tr><td>'+r.label+'</td><td>'+(r.latest==null?'–':isV?fV(r.latest):fP(r.latest))+'</td>'+[1,2,3].map(function(n){var c=r.c[n];return '<td'+(c.small?' class="flag"':'')+'>'+(c.v==null?'–':pct(c.v,0)+(c.small?'*':''))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
-  var L=fy[fy.length-1],isV=metric==='v',unit=isV?'transactions':'value',F=function(v){return fM(metric,v);},P1=function(x){return pct(x,1);};
-  var digNow=P.dig0,s0f=P.base0/digNow;
-  $('mStart').textContent=L.label+' Raast '+unit+' of '+F(P.base0)+' against '+F(digNow)+' across the 10 digital channels, a share of '+P1(s0f)+'. '+(L.basis==='estimate'?L.label+' is an estimate: '+L.estNote+'.':(L.basis==='sbp-annual'?'Both are SBP Annual Review totals.':L.label+' is a complete fiscal year of PSR data.'));
-  $('mCagr').textContent='Compound annual growth rate (CAGR) = (end ÷ start)^(1 ÷ years) − 1. Over the selected '+P.window+'-year window, '+P.baseLabel+' to '+P.from+': ('+F(P.base0)+' ÷ '+F(fy[fy.length-1-P.window][rk])+')^(1/'+P.window+') − 1 = '+P1(P.g0)+' a year. The window sets the starting rate: 1 year gives '+pct(G.filter(function(r){return r.label===(isV?'Raast volume':'Raast value');})[0].c[1].v,0)+', 3 years gives '+(function(c){return c.v==null?'n/a':pct(c.v,0);})(G.filter(function(r){return r.label===(isV?'Raast volume':'Raast value');})[0].c[3])+'.';
-  var gb=function(k){return P.g0+(P.gL-P.g0)*k/5;},gc=function(k){return P.gL+(P.g0-P.gL)*Math.pow(0.5,k);},gdk=function(k){return P.gd!=null?P.gd+(P.gL-P.gd)*k/5:P.gL;};
-  $('mBase').textContent='Growth falls in a straight line from '+P1(P.g0)+' to the long-run rate of '+pct(P.gL,0)+' by year five: growth in year k = '+P1(P.g0)+' + ('+pct(P.gL,0)+' − '+P1(P.g0)+') × k ÷ 5. That gives '+[1,2,3,4,5].map(function(k){return P1(gb(k));}).join(', ')+', reaching '+F(P.base[4])+' in '+P.years[4]+'.';
-  $('mCons').textContent='The gap between current growth and '+pct(P.gL,0)+' halves every year: growth in year k = '+pct(P.gL,0)+' + ('+P1(P.g0)+' − '+pct(P.gL,0)+') × 0.5^k. That gives '+[1,2,3,4,5].map(function(k){return P1(gc(k));}).join(', ')+', reaching '+F(P.cons[4])+' in '+P.years[4]+'. Both cases end near the same growth rate; the gap comes from how fast growth slows early on.';
-  $('mDig').textContent='Projected like the base case from its own '+P.window+'-year CAGR of '+(P.gd==null?'n/a':P1(P.gd))+', falling to '+pct(P.gL,0)+' by year five. It reaches '+F(P.dig[4])+' in '+P.years[4]+'. This is the denominator for the share chart.';
-  var capYrs=P.years.filter(function(y,i){return P.capped[i];});
-  $('mCap').textContent='Raast is not allowed above '+pct(P.cap,0)+' of projected digital payments; a year that would cross it is held at the ceiling. '+(capYrs.length?'With these settings the base case hits the ceiling from '+capYrs[0]+'.':'With these settings neither case reaches it.');
-  $('mShare').textContent='Projected Raast ÷ projected digital payments. Base case: '+P1(s0f)+' in '+P.from+' to '+P1(P.shareBase[4])+' in '+P.years[4]+'. Conservative: '+P1(shCons[4])+' in '+P.years[4]+'.';
-  var prev=[P.base0].concat(P.base),prevC=[P.base0].concat(P.cons);
-  $('tPSteps').innerHTML='<thead><tr><th>Year</th><th>Base growth</th><th>Base case</th><th>Conservative growth</th><th>Conservative</th><th>Digital payments</th><th>Base share</th><th>Conservative share</th></tr></thead><tbody>'+
-    '<tr><td>'+P.from+' (actual)</td><td>–</td><td>'+F(P.base0)+'</td><td>–</td><td>'+F(P.base0)+'</td><td>'+F(digNow)+'</td><td>'+P1(s0f)+'</td><td>'+P1(s0f)+'</td></tr>'+
-    P.years.map(function(y,i){return '<tr><td>'+y+'</td><td>'+P1(P.base[i]/prev[i]-1)+(P.capped[i]?'*':'')+'</td><td>'+F(P.base[i])+'</td><td>'+P1(P.cons[i]/prevC[i]-1)+'</td><td>'+F(P.cons[i])+'</td><td>'+F(P.dig[i])+'</td><td'+(P.capped[i]?' class="flag"':'')+'>'+P1(P.shareBase[i])+'</td><td>'+P1(shCons[i])+'</td></tr>';}).join('')+'</tbody>'+
-    (capYrs.length?'<tfoot><tr><td colspan="8">* Held at the '+pct(P.cap,0)+' share ceiling, so growth is lower than the formula rate.</td></tr></tfoot>':'');
+  $('pMethod').textContent='Base case: growth slows from '+pct(P.g0,0)+' to '+pct(P.gL,0)+' a year by '+P.years[4]+'; conservative slows faster; Raast capped at '+pct(P.cap,0)+' of digital payments.';
 }
 function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v)));var m=v/p;var n=m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10;return n*p;}
 
-/* ---------- data tab ---------- */
-function renderData(){
-  var w=(D.warnings||[]);
-  var L=X.fy[X.fy.length-1];
-  var info=[{lvl:'ok',msg:'Raast share of digital payments in '+X.ch[X.ch.length-1].q+': '+pct(X.ch[X.ch.length-1].share_v)+' volume, '+pct(X.ch[X.ch.length-1].share_val)+' value (10-channel denominator).'}];
-  var lq=X.q[X.q.length-1], ms=monthsOfQ(lq.q).map(function(k){return X.m.find(function(m){return m.m===k;});});
-  if(ms.every(Boolean)){var s=ms.reduce(function(a,m){return a+m.tot_v;},0);var d=s/lq.tot_v-1;info.push({lvl:Math.abs(d)>0.03?'warn':'ok',msg:lq.q+': monthly reporting sums to '+fV(s)+' vs PSR '+fV(lq.tot_v)+' ('+pct(d,1,true)+').'});}
-  if(L.basis==='estimate')info.push({lvl:'info',msg:L.label+' is an estimate built from '+L.estNote+'.'});
-  $('checks').innerHTML=info.concat(w).map(function(x){return '<li class="'+x.lvl+'">'+esc(x.msg)+'</li>';}).join('');
-  $('sources').innerHTML=['<p><b>Monthly.</b> SBP monthly Raast reporting workbook: P2P, P2M and Bulk sheets, plus the Cumulative Data sheet for all-use-case totals and launch-to-date figures. Volume in million, value in PKR billion.</p>',
-   '<p><b>Quarterly.</b> Raast_PSR_Data.xlsx, filled from SBP\'s Payment Systems Review annexures: Raast transactions, retail payments by channel (A-4) with ATM cash withdrawals (A-5), and infrastructure and users (A-1).</p>',
-   '<p><b>Raast share.</b> Raast ÷ the sum of 10 digital channels: ATM/CDM excluding cash withdrawals, POS, Internet Banking, Mobile Banking Apps, Call Center/IVR, E-Commerce, E-Money Wallets, BB/Digital Banking Apps, Direct Debit and BB Agents. Raast is not added to the denominator because it already flows through these channels.</p>',
-   '<p><b>Fiscal years.</b> July to June. A fiscal year with all four PSR quarters is actual. The latest year adds SBP monthly data after the last PSR quarter and fills any remaining months at the latest three-month run-rate. Figures entered on the Annual_SBP sheet replace the quarterly sums.</p>',
-   '<p><b>Revisions.</b> SBP revises earlier quarters in later PSR issues. The template holds the latest revision on file; overwrite a quarter whenever SBP publishes a revised figure.</p>'].join('');
-}
-
-/* ---------- upload / publish ---------- */
-var files={monthly:null,psr:[]}, artifactApi=null, canPublish=false;
-function readBuf(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(new Uint8Array(r.result));};r.onerror=function(){rej(r.error);};r.readAsArrayBuffer(f);});}
-function readFile(f){return readBuf(f).then(function(b){return XLSX.read(b,{type:'array'});});}
-var PDFJS_V='3.11.174', pdfReady=null;
+/* ---------- script loading ---------- */
 function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=function(){rej(new Error('Could not load '+src));};document.head.appendChild(s);});}
-function loadPdf(){ if(!pdfReady){ var base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_V+'/';
-  /* the worker script is loaded on the page itself, so PDF.js runs in the main thread (no cross-origin worker needed) */
-  pdfReady=loadScript(base+'pdf.worker.min.js').then(function(){return loadScript(base+'pdf.min.js');}).then(function(){var L=window.pdfjsLib;L.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.js';return L;}); }
-  return pdfReady; }
-function wireUpload(){
-  $('upMonthly').addEventListener('change',function(e){files.monthly=e.target.files[0]||null;$('upMonthlyN').textContent=files.monthly?files.monthly.name:'No file chosen';resetStage();});
-  $('upPsr').addEventListener('change',function(e){files.psr=Array.prototype.slice.call(e.target.files||[]);$('upPsrN').textContent=files.psr.length?files.psr.map(function(f){return f.name;}).join(', '):'No file chosen';resetStage();});
-  $('btnCheck').addEventListener('click',checkFiles);
-  $('btnPreview').addEventListener('click',function(){if(!staged)return;previewing=true;D=staged;$('previewBar').hidden=false;refresh();});
-  $('previewExit').addEventListener('click',function(){previewing=false;D=PUBLISHED;$('previewBar').hidden=true;refresh();});
-  $('btnPublish').addEventListener('click',publish);
-  $('btnDownload').addEventListener('click',downloadPage);
-}
-function resetStage(){$('btnCheck').disabled=!(files.monthly||files.psr.length);$('btnPreview').disabled=true;$('btnPublish').disabled=true;$('btnDownload').disabled=true;staged=null;$('upResult').innerHTML='';}
-function readPSRFiles(list){
-  /* each item: {kind:'pdf'|'xlsx', name, result} */
-  return Promise.all(list.map(function(f){
-    if(/\.pdf$/i.test(f.name)) return Promise.all([loadPdf(),readBuf(f)]).then(function(r){return psrLines(r[0],r[1]);}).then(function(lines){return {kind:'pdf',name:f.name,result:parsePSRText(lines)};});
-    return readFile(f).then(function(wb){return {kind:'xlsx',name:f.name,result:parsePSR(wb)};});
-  }));
-}
-function checkFiles(){
-  var out=$('upResult');out.innerHTML='<div>Reading files'+(files.psr.some(function(f){return /\.pdf$/i.test(f.name);})?' (PDFs take a few seconds)':'')+'…</div>';
-  Promise.all([files.monthly?readFile(files.monthly):null,files.psr.length?readPSRFiles(files.psr):null]).then(function(res){
-    var next=JSON.parse(JSON.stringify(PUBLISHED)),warn=[],notes=[];
-    if(res[0]){var M=parseMonthly(res[0]);if(M.monthly.length){next.monthly=M.monthly;next.cumulative=M.cumulative||next.cumulative;next.meta.monthlyFile=files.monthly.name;}warn=warn.concat(M.warnings);}
-    else warn=warn.concat((PUBLISHED.warnings||[]).filter(function(x){return /monthly|IDs|merchant|Bulk sheet|Gap/i.test(x.msg);}));
-    if(res[1]){
-      var xl=res[1].filter(function(r){return r.kind==='xlsx';}), pdfs=res[1].filter(function(r){return r.kind==='pdf';});
-      xl.forEach(function(r){var P=r.result;warn=warn.concat(P.warnings);if(P.quarterly.length&&P.channels.length){next.quarterly=P.quarterly;next.channels=P.channels;next.eco=P.eco;next.annual=P.annual;next.meta.psrFile=r.name;}});
-      pdfs.sort(function(a,b){return (a.result.latest?qIndex(a.result.latest):0)-(b.result.latest?qIndex(b.result.latest):0);});
-      var touched={};
-      pdfs.forEach(function(r){var P=r.result;warn=warn.concat(P.warnings.map(function(w){return {lvl:w.lvl,msg:r.name+': '+w.msg.replace(/^PDF: /,'')};}));
-        if(!P.latest)return;
-        var ch=mergePSR(next,P,'PSR '+P.latest.replace(' ','')+' (PDF)');
-        Object.keys(P.channels).concat(Object.keys(P.quarterly)).forEach(function(q){if(ch.skipped.indexOf(q)<0)touched[qFY(q)]=1;});
-        notes.push({lvl:'ok',msg:r.name+': read '+P.latest+' issue, covering '+Object.keys(P.channels).sort(function(a,b){return qIndex(a)-qIndex(b);}).join(', ')+'.'});
-        ch.changed.forEach(function(c){notes.push({lvl:'info',msg:'Updated to this issue\'s figure: '+c+'.'});});
-        if(ch.skipped.length) notes.push({lvl:'info',msg:r.name+': kept the newer figures already on file for '+ch.skipped.join(', ')+'.'});
-        next.meta.psrFile=r.name;});
-      (next.annual||[]).forEach(function(a){if(touched[a.fy]) warn.push({lvl:'warn',msg:a.fy+' has annual totals entered separately; they still override the quarterly figures just read. Remove them if the PDF should take precedence.'});});
-    } else warn=warn.concat((PUBLISHED.warnings||[]).filter(function(x){return !/monthly|IDs|merchant|Bulk sheet|Gap/i.test(x.msg);}));
-    var d=new Date();next.meta.updated=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    next.warnings=warn;
-    var errors=warn.filter(function(x){return x.lvl==='error';});
-    var nx=null;try{nx=derive(next);}catch(e){errors.push({lvl:'error',msg:'The files loaded but the dashboard could not compute from them: '+e.message});}
-    var ox=derive(PUBLISHED);
-    var html='';
-    if(nx){var a=ox.m[ox.m.length-1],b=nx.m[nx.m.length-1],qa=ox.q[ox.q.length-1],qb=nx.q[nx.q.length-1];
-      html+='<div class="sumgrid"><span class="h"></span><span class="h">Published</span><span class="h">From files</span>'+
-      '<span>Latest month</span><span>'+mLong(a.m)+'</span><span><b>'+mLong(b.m)+'</b></span>'+
-      '<span>That month, volume</span><span>'+fV(a.tot_v)+'</span><span><b>'+fV(b.tot_v)+'</b></span>'+
-      '<span>Latest PSR quarter</span><span>'+qa.q+'</span><span><b>'+qb.q+'</b></span>'+
-      '<span>Raast share (vol)</span><span>'+pct(ox.ch[ox.ch.length-1].share_v)+'</span><span><b>'+pct(nx.ch[nx.ch.length-1].share_v)+'</b></span>'+
-      '<span>Raast share (value)</span><span>'+pct(ox.ch[ox.ch.length-1].share_val)+'</span><span><b>'+pct(nx.ch[nx.ch.length-1].share_val)+'</b></span>'+
-      '<span>Months / quarters</span><span>'+ox.m.length+' / '+ox.q.length+'</span><span><b>'+nx.m.length+' / '+nx.q.length+'</b></span></div>';}
-    var all=notes.concat(warn);
-    html+='<ul class="checks">'+(all.length?all.map(function(x){return '<li class="'+x.lvl+'">'+esc(x.msg)+'</li>';}).join(''):'<li class="ok">No issues found.</li>')+'</ul>';
-    out.innerHTML=html;
-    if(errors.length||!nx){staged=null;$('btnPreview').disabled=true;$('btnPublish').disabled=true;$('btnDownload').disabled=true;out.insertAdjacentHTML('afterbegin','<div class="flag">Fix the errors below and load the file again.</div>');return;}
-    staged=next;$('btnPreview').disabled=false;$('btnPublish').disabled=!canPublish;$('btnDownload').disabled=false;
-  }).catch(function(e){out.innerHTML='<ul class="checks"><li class="error">Could not read a file: '+esc(e.message||e)+'. Use the SBP monthly .xlsx and the PSR as a .pdf (or the PSR template .xlsx).</li></ul>';});
-}
-function buildDocument(data){
-  var reset=(document.head.querySelector('style')||{}).textContent||'';
-  var json=JSON.stringify(data).replace(/</g,'\\u003c');
-  var parts=['<title>'+esc(document.title)+'</title>'];
-  document.querySelectorAll('[data-keep]').forEach(function(el){
-    if(el.id==='raast-data'){parts.push('<script type="application/json" id="raast-data" data-keep>'+json+'<\/script>');}
-    else if(el.id==='app'){parts.push('<div id="app" data-keep></div>');}
-    else parts.push(el.outerHTML);
-  });
-  if(!window.claude)return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><style>'+reset+'</style></head><body>'+parts.join('\n')+'</body></html>';
-  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>'+reset+'</style></head><body>'+parts.join('\n')+'</body></html>';
-}
-function publish(){
-  if(!staged||!artifactApi)return;var btn=$('btnPublish'),out=$('upResult');btn.disabled=true;btn.textContent='Publishing…';
-  artifactApi.publish(buildDocument(staged)).then(function(){btn.textContent='Published';out.insertAdjacentHTML('afterbegin','<div class="delta up">Published. Everyone with the link now sees this data.</div>');})
-  .catch(function(e){var c=e&&e.code;btn.textContent='Publish for everyone';
-    if(c==='conflict'){out.insertAdjacentHTML('afterbegin','<div class="flag">A newer version was published a moment ago. The page is reloading to it; load your files again afterwards.</div>');}
-    else if(c==='not_writer'||c==='not_granted'||c==='not_declared'||c==='consent_required'){canPublish=false;btn.hidden=true;$('upRole').textContent='You can view and preview data. Only editors of this dashboard can publish.';}
-    else if(c==='too_large'){out.insertAdjacentHTML('afterbegin','<div class="flag">The update is larger than the page size limit.</div>');btn.disabled=false;}
-    else {out.insertAdjacentHTML('afterbegin','<div class="flag">Publishing failed ('+esc(c||'error')+'). Try again in a minute.</div>');btn.disabled=false;}});
-}
-function downloadPage(){
-  if(!staged)return;
-  try{var blob=new Blob([buildDocument(staged)],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='index.html';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
-    $('upResult').insertAdjacentHTML('afterbegin','<div class="delta up">index.html downloaded. Upload it to the GitHub repository to replace the old one; the site updates within a minute or two.</div>');}
-  catch(e){$('upResult').insertAdjacentHTML('afterbegin','<div class="flag">Could not create the file: '+esc(e.message||e)+'</div>');}
-}
-function initCapabilities(){
-  $('upRole').textContent='Checking whether you can publish…';
-  var cl=window.claude;
-  if(!cl||!cl.use){$('btnDownload').hidden=false;$('upRole').textContent='On this website: load the files, check them, then download the updated index.html and upload it to the GitHub repository.';return;}
-  Promise.all([cl.use('artifact'),cl.use('user')]).then(function(r){artifactApi=r[0];var u=r[1];
-    return (u&&u.canEdit?u.canEdit():Promise.resolve(!!artifactApi)).then(function(ok){
-      canPublish=!!artifactApi&&ok!==false;
-      $('btnPublish').hidden=!canPublish;
-      $('upRole').textContent=canPublish?'You can publish. Viewers see the new data as soon as you publish.':'You can view and preview data. Only editors of this dashboard can publish.';
-    });
-  }).catch(function(){$('upRole').textContent='Preview works here. Publishing is not available in this view.';});
-}
 
 /* ---------- exports: chart images, PowerPoint charts, PDF reports ---------- */
 var XF='Arial, Helvetica, sans-serif';
@@ -1378,7 +1028,7 @@ function addExportControls(){
 function closeMenus(){document.querySelectorAll('.xp-menu').forEach(function(m){m.hidden=true;});document.querySelectorAll('.xp-btn').forEach(function(b){b.setAttribute('aria-expanded','false');});}
 
 /* ---------- tabs & controls ---------- */
-var RENDER={overview:renderOverview,monthly:renderMonthly,quarterly:renderQuarterly,ecosystem:renderEcosystem,outlook:renderOutlook,data:renderData};
+var RENDER={overview:renderOverview,monthly:renderMonthly,quarterly:renderQuarterly,ecosystem:renderEcosystem,outlook:renderOutlook};
 function show(tab){current=tab;document.querySelectorAll('.tabs button').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===tab));});
   document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.dataset.panel!==tab;});
   var panel=document.querySelector('[data-panel="'+tab+'"]');
@@ -1400,15 +1050,14 @@ function wire(){
   var rebuild=function(){chartDefaults();built={};RENDER[current]();built[current]=true;};
   if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',rebuild);
   new MutationObserver(rebuild).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  wireUpload();
 }
 function boot(){
   $('app').innerHTML=document.getElementById('shell-src').textContent;
   if(typeof Chart==='undefined'){$('app').insertAdjacentHTML('afterbegin','<div class="preview-bar">The charting library did not load. Check the connection and reload.</div>');return;}
   chartDefaults();X=derive(D);renderHeader();wire();addExportControls();
   var start='overview';try{var s=localStorage.getItem('raast-tab');if(s&&RENDER[s])start=s;}catch(e){}
-  if(/^#(overview|monthly|quarterly|ecosystem|outlook|data)$/.test(location.hash))start=location.hash.slice(1);
-  show(start);initCapabilities();
+  if(/^#(overview|monthly|quarterly|ecosystem|outlook)$/.test(location.hash))start=location.hash.slice(1);
+  show(start);
 }
 boot();
 })();
